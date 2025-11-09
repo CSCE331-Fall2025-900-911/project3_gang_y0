@@ -56,18 +56,7 @@ export default function Login() {
                 placeholder="Enter your email"
               />
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-black mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                className="w-full px-4 py-2 border border-gray-300 rounded bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your password"
-              />
-            </div>
-
+            
             <button
               onClick={handleGoogleLogin}
               className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
