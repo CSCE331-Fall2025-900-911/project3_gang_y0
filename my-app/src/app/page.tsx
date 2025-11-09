@@ -1,87 +1,115 @@
-'use client';
 
-import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
-export default function Login() {
-  const router = useRouter();
+interface Drink {
+  name: string;
+  price: string;
+}
 
-  const handleGoogleLogin = () => {
-    // Google OAuth2.0 - placeholder for now
-    router.push('/kiosk');
-  };
+interface MenuSection {
+  title: string;
+  image: string;
+  drinks: Drink[];
+}
 
-  const handleGuest = () => {
-    router.push('/kiosk');
-  };
+const menuData: MenuSection[] = [
+  {
+    title: 'Milk Tea',
+    image: '/milktea.png',
+    drinks: [
+      { name: 'Classic Milk Tea', price: '$5.50' },
+      { name: 'Taro Milk Tea', price: '$6.00' },
+      { name: 'Thai Milk Tea', price: '$5.75' },
+      { name: 'Matcha Milk Tea', price: '$6.25' },
+      { name: 'Honey Milk Tea', price: '$5.50' },
+      { name: 'Brown Sugar Milk Tea', price: '$6.50' },
+    ],
+  },
+  {
+    title: 'Fruit Tea',
+    image: '/fruitdrink.png',
+    drinks: [
+      { name: 'Passion Fruit Tea', price: '$5.75' },
+      { name: 'Mango Green Tea', price: '$6.00' },
+      { name: 'Strawberry Tea', price: '$5.75' },
+      { name: 'Peach Oolong Tea', price: '$6.25' },
+      { name: 'Lychee Tea', price: '$5.75' },
+      { name: 'Grapefruit Tea', price: '$6.00' },
+    ],
+  },
+  {
+    title: 'Blended Drinks',
+    image: '/blendeddrink.png',
+    drinks: [
+      { name: 'Mango Smoothie', price: '$6.50' },
+      { name: 'Strawberry Smoothie', price: '$6.50' },
+      { name: 'Taro Smoothie', price: '$6.75' },
+      { name: 'Chocolate Smoothie', price: '$6.50' },
+      { name: 'Matcha Smoothie', price: '$6.75' },
+      { name: 'Avocado Smoothie', price: '$7.00' },
+    ],
+  },
+  {
+    title: 'Specialty Drinks',
+    image: '/specialdrink.png',
+    drinks: [
+      { name: 'Bubble Waffle Drink', price: '$7.50' },
+      { name: 'Rainbow Boba', price: '$6.75' },
+      { name: 'Lava Flow', price: '$7.00' },
+      { name: 'Sunset Paradise', price: '$6.75' },
+      { name: 'Coconut Cloud', price: '$7.25' },
+      { name: 'Purple Dream', price: '$6.75' },
+    ],
+  },
+];
 
-  const handleManager = () => {
-    router.push('/manager-login');
-  };
-
-  const handleCashier = () => {
-    router.push('/cashier-login');
-  };
-
+export default function Home() {
   return (
-    <div className="min-h-screen bg-white">
-      <div className="absolute top-4 right-4 flex gap-2">
-        <button
-          onClick={handleManager}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Manager
-        </button>
-        <button
-          onClick={handleCashier}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Cashier
-        </button>
-      </div>
-
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="w-full max-w-md space-y-6 p-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-semibold text-black mb-8">Customer Login</h1>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-black mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                className="w-full px-4 py-2 border border-gray-300 rounded bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your email"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-black mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                className="w-full px-4 py-2 border border-gray-300 rounded bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your password"
-              />
-            </div>
-
-            <button
-              onClick={handleGoogleLogin}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 p-8">
+      <div className="mx-auto max-w-7xl">
+        <h1 className="mb-8 text-center text-5xl font-bold text-gray-800">
+          Boba Shop Menu
+        </h1>
+        
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {menuData.map((section, index) => (
+            <div
+              key={index}
+              className="rounded-2xl bg-white p-6 shadow-lg transition-transform hover:scale-105"
             >
-              Login
-            </button>
-
-            <button
-              onClick={handleGuest}
-              className="w-full px-4 py-2 bg-gray-200 text-black rounded hover:bg-gray-300"
-            >
-              Continue as Guest
-            </button>
-          </div>
+              <h2 className="mb-4 text-center text-3xl font-semibold text-gray-800">
+                {section.title}
+              </h2>
+              
+              <div className="mb-6 flex justify-center">
+                <div className="relative h-48 w-48 overflow-hidden rounded-full bg-white">
+                  <Image
+                    src={section.image}
+                    alt={section.title}
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                {section.drinks.map((drink, drinkIndex) => (
+                  <div
+                    key={drinkIndex}
+                    className="flex items-center justify-between rounded-lg bg-gradient-to-r from-pink-50 to-purple-50 p-3 transition-colors hover:from-pink-100 hover:to-purple-100"
+                  >
+                    <span className="text-lg font-medium text-gray-700">
+                      {drink.name}
+                    </span>
+                    <span className="text-lg font-bold text-purple-600">
+                      {drink.price}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
