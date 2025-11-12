@@ -1,5 +1,8 @@
+'use client';
 
 import Image from 'next/image';
+import { useTranslation, useTranslations } from '@/hooks/useTranslation';
+import { useState, useEffect } from 'react';
 
 interface Drink {
   name: string;
@@ -64,15 +67,49 @@ const menuData: MenuSection[] = [
 ];
 
 export default function Home() {
+  const bobaShopMenuText = useTranslation('Boba Shop Menu');
+  
+  // Translate all section titles
+  const sectionTitles = menuData.map(section => section.title);
+  const translatedTitles = useTranslations(sectionTitles);
+  
+  // Translate all drink names
+  const allDrinkNames = menuData.flatMap(section => section.drinks.map(drink => drink.name));
+  const translatedDrinkNames = useTranslations(allDrinkNames);
+  
+  // Reconstruct menu data with translations
+  const [translatedMenuData, setTranslatedMenuData] = useState(menuData);
+  
+  useEffect(() => {
+    const translated = menuData.map((section, sectionIndex) => ({
+      ...section,
+      title: translatedTitles[sectionIndex],
+      drinks: section.drinks.map((drink, drinkIndex) => {
+        // Calculate the global index for this drink
+        let globalDrinkIndex = 0;
+        for (let i = 0; i < sectionIndex; i++) {
+          globalDrinkIndex += menuData[i].drinks.length;
+        }
+        globalDrinkIndex += drinkIndex;
+        
+        return {
+          ...drink,
+          name: translatedDrinkNames[globalDrinkIndex],
+        };
+      }),
+    }));
+    setTranslatedMenuData(translated);
+  }, [translatedTitles, translatedDrinkNames]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 p-8">
       <div className="mx-auto max-w-7xl">
         <h1 className="mb-8 text-center text-5xl font-bold text-gray-800">
-          Boba Shop Menu
+          {bobaShopMenuText}
         </h1>
         
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {menuData.map((section, index) => (
+          {translatedMenuData.map((section, index) => (
             <div
               key={index}
               className="rounded-2xl bg-white p-6 shadow-lg transition-transform hover:scale-105"
