@@ -1,12 +1,20 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "../api/auth/[...nextauth]/route";
+'use client';
 
-export default async function Kiosk() {
-  const session = await getServerSession(authOptions);
+import { useSession } from "next-auth/react";
+import { useTranslation } from '@/hooks/useTranslation';
+
+export default function Kiosk() {
+  const { data: session } = useSession();
+  const welcomeText = useTranslation('Welcome');
+  const notLoggedInText = useTranslation('Not logged in');
 
   return (
     <div>
-      {session ? <p>Welcome {session.user?.name}</p> : <p>Not logged in</p>}
+      {session ? (
+        <p>{welcomeText} {session.user?.name}</p>
+      ) : (
+        <p>{notLoggedInText}</p>
+      )}
     </div>
   );
 }
