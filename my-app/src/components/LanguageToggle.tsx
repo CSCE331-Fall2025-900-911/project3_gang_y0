@@ -12,15 +12,15 @@ export default function LanguageToggle() {
   return (
     <button
       onClick={toggleLanguage}
-      className="fixed top-4 right-4 z-50 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center gap-2"
+      className="fixed top-4 left-4 z-50 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center gap-2"
       aria-label="Toggle language"
     >
       <span className="text-sm font-medium">
-        {language === 'en' ? '🇺🇸 EN' : '🇪🇸 ES'}
+        {language === 'en' ? 'ENGLISH' : 'SPANISH'}
       </span>
       <span className="text-xs">→</span>
       <span className="text-sm font-medium">
-        {language === 'en' ? '🇪🇸 ES' : '🇺🇸 EN'}
+        {language === 'en' ? 'SPANISH' : 'ENGLISH'}
       </span>
     </button>
   );

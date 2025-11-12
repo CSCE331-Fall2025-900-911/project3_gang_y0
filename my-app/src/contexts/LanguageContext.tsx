@@ -6,8 +6,8 @@ import { Language, translateText, translateBatch } from '@/lib/translate';
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  translate: (text: string) => Promise<string>;
-  translateMultiple: (texts: string[]) => Promise<string[]>;
+  translate: (text: string, targetLang?: Language) => Promise<string>;
+  translateMultiple: (texts: string[], targetLang?: Language) => Promise<string[]>;
   isLoading: boolean;
 }
 
@@ -30,28 +30,30 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('language', lang);
   };
 
-  const translate = async (text: string): Promise<string> => {
-    if (language === 'en') {
+  const translate = async (text: string, targetLang?: Language): Promise<string> => {
+    const lang = targetLang || language;
+    if (lang === 'en') {
       return text; // Assume original text is in English
     }
     
     setIsLoading(true);
     try {
-      const translated = await translateText(text, language, 'en');
+      const translated = await translateText(text, lang, 'en');
       return translated;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const translateMultiple = async (texts: string[]): Promise<string[]> => {
-    if (language === 'en') {
+  const translateMultiple = async (texts: string[], targetLang?: Language): Promise<string[]> => {
+    const lang = targetLang || language;
+    if (lang === 'en') {
       return texts;
     }
     
     setIsLoading(true);
     try {
-      const translated = await translateBatch(texts, language, 'en');
+      const translated = await translateBatch(texts, lang, 'en');
       return translated;
     } finally {
       setIsLoading(false);
