@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useTranslation, useTranslations } from '@/hooks/useTranslation';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Drink {
   name: string;
@@ -67,6 +68,7 @@ const menuData: MenuSection[] = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const bobaShopMenuText = useTranslation('Boba Shop Menu');
   
   // Translate all section titles
@@ -79,6 +81,10 @@ export default function Home() {
   
   // Reconstruct menu data with translations
   const [translatedMenuData, setTranslatedMenuData] = useState(menuData);
+  
+  const handleContinue = () => {
+    router.push('/login');
+  };
   
   useEffect(() => {
     const translated = menuData.map((section, sectionIndex) => ({
