@@ -25,7 +25,7 @@ const menuData: MenuSection[] = [
       { name: 'Taro Milk Tea', price: '$6.00' },
       { name: 'Thai Milk Tea', price: '$5.75' },
       { name: 'Matcha Milk Tea', price: '$6.25' },
-      { name: 'Honey Milk Tea', price: '$5.50' },
+      { name: 'Honeydew Milk Tea', price: '$5.50' },
       { name: 'Brown Sugar Milk Tea', price: '$6.50' },
     ],
   },
@@ -140,7 +140,7 @@ export default function Home() {
                 {section.drinks.map((drink, drinkIndex) => (
                   <div
                     key={drinkIndex}
-                    className="flex items-center justify-between rounded-lg bg-gradient-to-r from-pink-50 to-purple-50 p-3 transition-colors hover:from-pink-100 hover:to-purple-100"
+                    className="flex items-center justify-between rounded-lg bg-gradient-to-r from-pink-50 to-purple-50 p-3"
                   >
                     <span className="text-lg font-medium text-gray-700">
                       {drink.name}
