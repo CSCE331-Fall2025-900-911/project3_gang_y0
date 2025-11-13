@@ -1,5 +1,7 @@
+'use client';
 
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 interface Drink {
   name: string;
@@ -64,6 +66,12 @@ const menuData: MenuSection[] = [
 ];
 
 export default function Home() {
+  const router = useRouter();
+
+  const handleContinue = () => {
+    router.push('/login');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 p-8">
       <div className="mx-auto max-w-7xl">
@@ -110,6 +118,15 @@ export default function Home() {
               </div>
             </div>
           ))}
+        </div>
+        
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={handleContinue}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Continue
+          </button>
         </div>
       </div>
     </div>
