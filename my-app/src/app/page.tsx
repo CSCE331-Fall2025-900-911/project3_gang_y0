@@ -57,12 +57,12 @@ const menuData: MenuSection[] = [
     title: 'Specialty Drinks',
     image: '/specialdrink.png',
     drinks: [
-      { name: 'Bubble Waffle Drink', price: '$7.50' },
+      { name: 'Coffee Milk Tea', price: '$7.50' },
       { name: 'Rainbow Boba', price: '$6.75' },
-      { name: 'Lava Flow', price: '$7.00' },
+      { name: 'Red Bean Milk Tea', price: '$7.00' },
       { name: 'Sunset Paradise', price: '$6.75' },
       { name: 'Coconut Cloud', price: '$7.25' },
-      { name: 'Purple Dream', price: '$6.75' },
+      { name: 'Jasmine Cheese Foam Tea', price: '$6.75' },
     ],
   },
 ];
@@ -153,15 +153,6 @@ export default function Home() {
               </div>
             </div>
           ))}
-        </div>
-        
-        <div className="mt-8 flex justify-center">
-          <button
-            onClick={handleContinue}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Continue
-          </button>
         </div>
       </div>
     </div>
