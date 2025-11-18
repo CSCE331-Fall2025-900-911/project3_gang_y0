@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useTextSize } from '@/contexts/TextSizeContext';
+
+
 
 interface MenuItem {
   id: number;
@@ -24,6 +27,7 @@ export default function Cashier() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | null>(null);
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { getTextSizeClass } = useTextSize();
 
   // Translations
   const cashierText = useTranslation('Cashier');
@@ -157,11 +161,11 @@ export default function Cashier() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen bg-gray-50 ${getTextSizeClass('3xl')}`}>
       <div className="flex h-screen">
         {/* Left Side - Menu Items */}
         <div className="w-2/3 overflow-y-auto bg-white p-6">
-        <h1 className="mb-6 text-3xl font-bold text-gray-800 text-center">{cashierText}</h1>
+        <h1 className={`mb-6 font-bold text-gray-800 text-center`}>{cashierText}</h1>
 
           {/* Category Tabs */}
           <div className="mb-6 flex gap-2 border-b">
@@ -169,7 +173,7 @@ export default function Cashier() {
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 font-medium transition-colors ${
+                className={`px-4 py-2 font-medium transition-colors  ${
                   selectedCategory === category
                     ? 'border-b-2 border-blue-600 text-blue-600'
                     : 'text-gray-600 hover:text-gray-800'
