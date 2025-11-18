@@ -1,4 +1,7 @@
+'use client';
+
 import Image from 'next/image';
+import { useTextSize } from '@/contexts/TextSizeContext';
 
 interface Drink {
   name: string;
@@ -63,10 +66,12 @@ const menuData: MenuSection[] = [
 ];
 
 export default function MenuBoard() {
+  const { getTextSizeClass, textSize } = useTextSize();
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 p-8" data-text-size={textSize}>
       <div className="mx-auto max-w-7xl">
-        <h1 className="mb-8 text-center text-5xl font-bold text-gray-800">
+        <h1 className={`mb-8 text-center font-bold text-gray-800 ${getTextSizeClass('5xl')}`}>
           Boba Shop Menu
         </h1>
         
@@ -76,7 +81,7 @@ export default function MenuBoard() {
               key={index}
               className="rounded-2xl bg-white p-6 shadow-lg transition-transform hover:scale-105"
             >
-              <h2 className="mb-4 text-center text-3xl font-semibold text-gray-800">
+              <h2 className={`mb-4 text-center font-semibold text-gray-800 ${getTextSizeClass('3xl')}`}>
                 {section.title}
               </h2>
               
@@ -98,10 +103,10 @@ export default function MenuBoard() {
                     key={drinkIndex}
                     className="flex items-center justify-between rounded-lg bg-gradient-to-r from-pink-50 to-purple-50 p-3 transition-colors hover:from-pink-100 hover:to-purple-100"
                   >
-                    <span className="text-lg font-medium text-gray-700">
+                    <span className={`font-medium text-gray-700 ${getTextSizeClass('lg')}`}>
                       {drink.name}
                     </span>
-                    <span className="text-lg font-bold text-purple-600">
+                    <span className={`font-bold text-purple-600 ${getTextSizeClass('lg')}`}>
                       {drink.price}
                     </span>
                   </div>

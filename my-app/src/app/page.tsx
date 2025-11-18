@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useTranslation, useTranslations } from '@/hooks/useTranslation';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTextSize } from '@/contexts/TextSizeContext';
 
 interface Drink {
   name: string;
@@ -69,6 +70,7 @@ const menuData: MenuSection[] = [
 
 export default function Home() {
   const router = useRouter();
+  const { getTextSizeClass } = useTextSize();
   const bobaShopMenuText = useTranslation('Boba Shop Menu');
   
   // Translate all section titles
@@ -110,7 +112,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 p-8">
       <div className="mx-auto max-w-7xl">
-        <h1 className="mb-8 text-center text-5xl font-bold text-gray-800">
+        <h1 className={`mb-8 text-center font-bold text-gray-800 ${getTextSizeClass('5xl')}`}>
           {bobaShopMenuText}
         </h1>
         
@@ -120,7 +122,7 @@ export default function Home() {
               key={index}
               className="rounded-2xl bg-white p-6 shadow-lg transition-transform hover:scale-105"
             >
-              <h2 className="mb-4 text-center text-3xl font-semibold text-gray-800">
+              <h2 className={`mb-4 text-center font-semibold text-gray-800 ${getTextSizeClass('3xl')}`}>
                 {section.title}
               </h2>
               
@@ -142,10 +144,10 @@ export default function Home() {
                     key={drinkIndex}
                     className="flex items-center justify-between rounded-lg bg-gradient-to-r from-pink-50 to-purple-50 p-3"
                   >
-                    <span className="text-lg font-medium text-gray-700">
+                    <span className={`font-medium text-gray-700 ${getTextSizeClass('lg')}`}>
                       {drink.name}
                     </span>
-                    <span className="text-lg font-bold text-purple-600">
+                    <span className={`font-bold text-purple-600 ${getTextSizeClass('lg')}`}>
                       {drink.price}
                     </span>
                   </div>
@@ -158,7 +160,7 @@ export default function Home() {
         <div className="mt-8 flex justify-center">
           <button
             onClick={handleContinue}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 ${getTextSizeClass('base')}`}
           >
             Continue
           </button>

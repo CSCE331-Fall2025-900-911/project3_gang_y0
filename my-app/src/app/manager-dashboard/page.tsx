@@ -2,9 +2,11 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useTextSize } from '@/contexts/TextSizeContext';
 
 export default function ManagerDashboard() {
   const router = useRouter();
+  const { getTextSizeClass } = useTextSize();
   const [employee, setEmployee] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -44,7 +46,7 @@ export default function ManagerDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-black">Loading...</div>
+        <div className={`text-black ${getTextSizeClass('base')}`}>Loading...</div>
       </div>
     );
   }
@@ -59,12 +61,12 @@ export default function ManagerDashboard() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-black">Manager Dashboard</h1>
-            <p className="text-gray-600 mt-2">Welcome back, {employee.name}!</p>
+            <h1 className={`font-bold text-black ${getTextSizeClass('3xl')}`}>Manager Dashboard</h1>
+            <p className={`text-gray-600 mt-2 ${getTextSizeClass('base')}`}>Welcome back, {employee.name}!</p>
           </div>
           <button
             onClick={handleLogout}
-            className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm"
+            className={`bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors ${getTextSizeClass('sm')}`}
           >
             Logout
           </button>
@@ -73,22 +75,22 @@ export default function ManagerDashboard() {
         {/* Navigation Cards */}
         <div className="space-y-4">
           <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-            <h2 className="text-xl font-semibold text-black mb-2">Cashier Interface</h2>
-            <p className="text-gray-600 mb-4">Process customer orders and handle transactions</p>
+            <h2 className={`font-semibold text-black mb-2 ${getTextSizeClass('xl')}`}>Cashier Interface</h2>
+            <p className={`text-gray-600 mb-4 ${getTextSizeClass('base')}`}>Process customer orders and handle transactions</p>
             <button
               onClick={() => router.push('/cashier')}
-              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              className={`bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors ${getTextSizeClass('base')}`}
             >
               Go to Cashier
             </button>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-            <h2 className="text-xl font-semibold text-black mb-2">Manager Tools</h2>
-            <p className="text-gray-600 mb-4">Access reports, analytics, and administrative functions</p>
+            <h2 className={`font-semibold text-black mb-2 ${getTextSizeClass('xl')}`}>Manager Tools</h2>
+            <p className={`text-gray-600 mb-4 ${getTextSizeClass('base')}`}>Access reports, analytics, and administrative functions</p>
             <button
               onClick={() => router.push('/manager')}
-              className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors"
+              className={`bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors ${getTextSizeClass('base')}`}
             >
               Go to Manager
             </button>
