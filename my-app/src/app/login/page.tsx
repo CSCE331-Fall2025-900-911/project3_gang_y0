@@ -27,11 +27,11 @@ export default function Login() {
   };
 
   const handleManager = () => {
-    router.push('/manager-login');
+    router.push('/employee-login');
   };
 
   const handleCashier = () => {
-    router.push('/cashier-login');
+    router.push('/employee-login');
   };
 
   return (
