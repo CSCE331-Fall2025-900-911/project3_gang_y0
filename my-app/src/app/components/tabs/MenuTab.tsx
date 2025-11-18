@@ -56,19 +56,19 @@ export default function MenuTab() {
                 <th className="p-2">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {items.map((it) => (
-                <tr key={it.id} className="border-t">
-                  <td className="p-2">{it.name}</td>
-                  <td className="p-2">${it.price.toFixed(2)}</td>
-                  <td className="p-2">{it.inventory_name ?? '-'}</td>
-                  <td className="p-2">
-                    <button onClick={() => edit(it)} className="mr-2 px-2 py-1 text-sm border rounded">Edit</button>
-                    <button onClick={() => remove(it.id)} className="px-2 py-1 text-sm border rounded">Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+                <tbody>
+                {[
+                    { id: 1, name: 'Burger', price: 5.99 },
+                    { id: 2, name: 'Fries', price: 2.99 },
+                    { id: 3, name: 'Soda', price: 1.5 }
+                ].map((it) => (
+                    <tr key={it.id} className="border-t">
+                    <td className="p-2">{it.name}</td>
+                    <td className="p-2">${it.price.toFixed(2)}</td>
+                    </tr>
+                ))}
+                </tbody>
+
           </table>
         </div>
         <div className="p-4 border border-gray-200 rounded">

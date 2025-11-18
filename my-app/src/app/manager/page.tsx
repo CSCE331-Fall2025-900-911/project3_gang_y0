@@ -1,6 +1,6 @@
 'use client';
 
-import ManagerTabs from '@/components/ManagerTabs';
+import ManagerTabs from '../components/ManagerTabs';
 
 export default function ManagerPage() {
   return (
