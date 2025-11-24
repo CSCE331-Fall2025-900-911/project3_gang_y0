@@ -74,7 +74,7 @@ export default function InventoryTab() {
                   <td className="p-2">${it.unit_price != null ? Number(it.unit_price).toFixed(2) : '0.00'}</td>
                   <td className="p-2 flex gap-2">
                     <button onClick={() => edit(it)} className="px-2 py-1 text-sm border rounded">Edit</button>
-                    <button onClick={() => remove(it.id)} className="px-2 py-1 text-sm border rounded bg-red-200">Delete</button>
+                    <button onClick={() => remove(it.id)} className="px-2 py-1 text-sm border rounded text-red-600">Delete</button>
                   </td>
                 </tr>
               ))}

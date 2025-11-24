@@ -70,10 +70,10 @@ export default function EmployeesTab() {
                   <td className="p-2">{it.id}</td>
                   <td className="p-2">{it.name}</td>
                   <td className="p-2">{it.email}</td>
-                  <td className="p-2">{it.position}</td>
+                  <td className="p-2">{it.position.charAt(0).toUpperCase() + it.position.slice(1)}</td>
                   <td className="p-2 flex gap-2">
                     <button onClick={() => edit(it)} className="px-2 py-1 text-sm border rounded">Edit</button>
-                    <button onClick={() => remove(it.id)} className="px-2 py-1 border rounded bg-red-500 text-white">Delete</button>
+                    <button onClick={() => remove(it.id)} className="px-2 py-1 text-sm border rounded text-red-600">Delete</button>
                   </td>
                 </tr>
               ))}
@@ -107,10 +107,10 @@ export default function EmployeesTab() {
             <div className="text-sm text-gray-700">Position</div>
             <select
               className="w-full p-2 border rounded"
-              value={form.position}
-              onChange={e => setForm({ ...form, position: e.target.value as Employee['position'] })}
+              value={form.position.charAt(0).toUpperCase() + form.position.slice(1)}
+              onChange={e => setForm({ ...form, position: e.target.value.toLowerCase() as Employee['position'] })}
             >
-              {POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
+              {POSITIONS.map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
             </select>
           </label>
 
