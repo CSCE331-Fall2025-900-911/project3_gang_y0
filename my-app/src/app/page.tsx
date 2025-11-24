@@ -120,7 +120,7 @@ export default function Home() {
           {translatedMenuData.map((section, index) => (
             <div
               key={index}
-              className="rounded-2xl bg-white p-6 shadow-lg transition-transform hover:scale-105"
+              className="rounded-2xl bg-white p-6 shadow-lg"
             >
               <h2 className={`mb-4 text-center font-semibold text-gray-800 ${getTextSizeClass('3xl')}`}>
                 {section.title}
