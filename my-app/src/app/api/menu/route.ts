@@ -7,7 +7,6 @@ export async function GET() {
   try {
     const result = await pool.query('SELECT id, item, category, price FROM menu ORDER BY category, item');
 
-    // Get inventory mapping
     const menuIds = result.rows.map((r) => r.id);
     const invRes = await pool.query('SELECT menu_item_id, inventory_id FROM menuingredients WHERE menu_item_id = ANY($1)', [menuIds]);
 
@@ -28,7 +27,6 @@ export async function POST(req: Request) {
   try {
     const { item, price, category, inventory_item_ids } = await req.json();
 
-    // Get next id manually
     const maxRes = await pool.query('SELECT MAX(id) AS max_id FROM menu');
     const nextId = (maxRes.rows[0].max_id || 0) + 1;
 
@@ -37,7 +35,6 @@ export async function POST(req: Request) {
       [nextId, item, category, price]
     );
 
-    // Insert inventory mapping safely
     if (inventory_item_ids && inventory_item_ids.length > 0) {
       for (const invId of inventory_item_ids) {
         const exists = await pool.query('SELECT 1 FROM inventory WHERE id=$1', [invId]);
@@ -64,10 +61,8 @@ export async function PUT(req: Request) {
 
     await pool.query('UPDATE menu SET item=$1, price=$2, category=$3 WHERE id=$4', [item, price, category, id]);
 
-    // Delete old inventory mappings
     await pool.query('DELETE FROM menuingredients WHERE menu_item_id=$1', [id]);
 
-    // Insert new inventory mappings safely
     if (inventory_item_ids && inventory_item_ids.length > 0) {
       for (const invId of inventory_item_ids) {
         const exists = await pool.query('SELECT 1 FROM inventory WHERE id=$1', [invId]);
