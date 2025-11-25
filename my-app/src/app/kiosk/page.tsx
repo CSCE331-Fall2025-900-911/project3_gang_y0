@@ -46,7 +46,7 @@ export default function KioskPage() {
 
   const fetchMenu = async () => {
     try {
-      const response = await fetch('/api/menu');
+      const response = await fetch('/api/kiosk-menu');
       const data = await response.json();
       setMenuData(data);
       
