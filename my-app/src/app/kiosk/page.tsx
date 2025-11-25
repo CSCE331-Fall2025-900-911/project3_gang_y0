@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { filterSeasonalDrinks, type Season } from '@/lib/seasonalDrinks';
 
 interface MenuItem {
   id: number;
@@ -39,19 +40,43 @@ export default function KioskPage() {
     quantity: 1
   });
   const [loading, setLoading] = useState(true);
+  const [currentSeason, setCurrentSeason] = useState<Season>('fall/spring');
 
   useEffect(() => {
-    fetchMenu();
+    fetchWeatherAndMenu();
   }, []);
 
-  const fetchMenu = async () => {
+  const fetchWeatherAndMenu = async () => {
     try {
+      // Fetch weather to determine season
+      const weatherResponse = await fetch('/api/weather');
+      let season: Season = 'fall/spring'; // Default
+      if (weatherResponse.ok) {
+        const weatherData = await weatherResponse.json();
+        if (weatherData.success && weatherData.season) {
+          season = weatherData.season as Season;
+          setCurrentSeason(season);
+        }
+      }
+
+      // Fetch menu
       const response = await fetch('/api/kiosk-menu');
       const data = await response.json();
-      setMenuData(data);
+      
+      // Filter seasonal drinks based on current season
+      const filteredData: MenuData = {};
+      for (const [category, items] of Object.entries(data)) {
+        if (category === 'Seasonal') {
+          filteredData[category] = filterSeasonalDrinks(items as MenuItem[], season);
+        } else {
+          filteredData[category] = items as MenuItem[];
+        }
+      }
+      
+      setMenuData(filteredData);
       
       // Set first non-topping category as selected
-      const categories = Object.keys(data).filter(cat => cat !== 'Topping');
+      const categories = Object.keys(filteredData).filter(cat => cat !== 'Topping');
       if (categories.length > 0) {
         setSelectedCategory(categories[0]);
       }
@@ -67,7 +92,8 @@ export default function KioskPage() {
       'Milk Tea': '/milktea.png',
       'Fruit Tea': '/fruittea.png',
       'Smoothie': '/smoothie.png',
-      'Specialty': '/specialty.png'
+      'Specialty': '/specialty.png',
+      'Seasonal': '/specialty.png'
     };
     return imageMap[category] || '/milktea.png'; // Default to milk tea image
   };

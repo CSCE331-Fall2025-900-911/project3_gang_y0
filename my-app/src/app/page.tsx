@@ -5,6 +5,7 @@ import { useTranslation, useTranslations } from '@/hooks/useTranslation';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTextSize } from '@/contexts/TextSizeContext';
+import { filterSeasonalDrinks, type Season } from '@/lib/seasonalDrinks';
 
 interface Drink {
   name: string;
@@ -72,16 +73,69 @@ export default function Home() {
   const router = useRouter();
   const { getTextSizeClass } = useTextSize();
   const bobaShopMenuText = useTranslation('Boba Shop Menu');
+  const seasonalTitleText = useTranslation('Seasonal');
+  const [seasonalDrinks, setSeasonalDrinks] = useState<Drink[]>([]);
+  const [currentSeason, setCurrentSeason] = useState<Season>('fall/spring');
+  const [loadingSeasonal, setLoadingSeasonal] = useState(true);
+  
+  // Fetch weather and seasonal drinks
+  useEffect(() => {
+    const fetchSeasonalDrinks = async () => {
+      try {
+        // Fetch weather to determine season
+        const weatherResponse = await fetch('/api/weather');
+        let season: Season = 'fall/spring'; // Default
+        if (weatherResponse.ok) {
+          const weatherData = await weatherResponse.json();
+          if (weatherData.success && weatherData.season) {
+            season = weatherData.season as Season;
+            setCurrentSeason(season);
+          }
+        }
+
+        // Fetch seasonal drinks from database
+        const menuResponse = await fetch('/api/menu');
+        if (menuResponse.ok) {
+          const menuDataResponse = await menuResponse.json();
+          if (menuDataResponse.items) {
+            // Filter seasonal drinks based on current season
+            const filteredSeasonal = menuDataResponse.items
+              .filter((item: any) => item.category === 'Seasonal')
+              .filter((item: any) => {
+                const itemName = item.item || item.name || '';
+                return filterSeasonalDrinks([{ item: itemName }], season).length > 0;
+              })
+              .map((item: any) => ({
+                name: item.item,
+                price: `$${parseFloat(item.price).toFixed(2)}`
+              }));
+            
+            setSeasonalDrinks(filteredSeasonal);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching seasonal drinks:', error);
+      } finally {
+        setLoadingSeasonal(false);
+      }
+    };
+
+    fetchSeasonalDrinks();
+  }, []);
   
   // Translate all section titles
   const sectionTitles = menuData.map(section => section.title);
   const translatedTitles = useTranslations(sectionTitles);
   
-  // Translate all drink names
-  const allDrinkNames = menuData.flatMap(section => section.drinks.map(drink => drink.name));
-  const translatedDrinkNames = useTranslations(allDrinkNames);
+  // Translate all regular drink names
+  const allRegularDrinkNames = menuData.flatMap(section => section.drinks.map(drink => drink.name));
+  const translatedRegularDrinkNames = useTranslations(allRegularDrinkNames);
   
-  // Reconstruct menu data with translations
+  // Translate seasonal drink names separately
+  const seasonalDrinkNames = seasonalDrinks.map(drink => drink.name);
+  const translatedSeasonalDrinkNames = useTranslations(seasonalDrinkNames);
+  
+  // Reconstruct menu data with translations and add seasonal section
   const [translatedMenuData, setTranslatedMenuData] = useState(menuData);
   
   const handleContinue = () => {
@@ -89,9 +143,10 @@ export default function Home() {
   };
   
   useEffect(() => {
+    // Translate regular menu sections
     const translated = menuData.map((section, sectionIndex) => ({
       ...section,
-      title: translatedTitles[sectionIndex],
+      title: translatedTitles[sectionIndex] || section.title,
       drinks: section.drinks.map((drink, drinkIndex) => {
         // Calculate the global index for this drink
         let globalDrinkIndex = 0;
@@ -102,12 +157,31 @@ export default function Home() {
         
         return {
           ...drink,
-          name: translatedDrinkNames[globalDrinkIndex],
+          name: translatedRegularDrinkNames[globalDrinkIndex] || drink.name,
         };
       }),
     }));
+    
+    // Add seasonal section if there are seasonal drinks
+    if (seasonalDrinks.length > 0 && !loadingSeasonal) {
+      const translatedSeasonalDrinks = seasonalDrinks.map((drink, index) => {
+        // Use translated name if available, otherwise use original name
+        const translatedName = translatedSeasonalDrinkNames[index];
+        return {
+          ...drink,
+          name: (translatedName && translatedName !== drink.name) ? translatedName : drink.name
+        };
+      });
+      
+      translated.push({
+        title: seasonalTitleText || 'Seasonal',
+        image: '/specialty.png',
+        drinks: translatedSeasonalDrinks
+      });
+    }
+    
     setTranslatedMenuData(translated);
-  }, [translatedTitles, translatedDrinkNames]);
+  }, [translatedTitles, translatedRegularDrinkNames, translatedSeasonalDrinkNames, seasonalDrinks, loadingSeasonal, seasonalTitleText]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 p-8">

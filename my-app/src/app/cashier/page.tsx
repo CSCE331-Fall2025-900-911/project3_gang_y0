@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTextSize } from '@/contexts/TextSizeContext';
+import { filterSeasonalDrinks, type Season } from '@/lib/seasonalDrinks';
 
 
 
@@ -11,6 +12,7 @@ interface MenuItem {
   name: string;
   price: number;
   category: string;
+  item?: string;
 }
 
 interface CartItem {
@@ -27,6 +29,7 @@ export default function Cashier() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | null>(null);
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [currentSeason, setCurrentSeason] = useState<Season>('fall/spring');
   const { getTextSizeClass } = useTextSize();
 
   // Translations
@@ -45,21 +48,38 @@ export default function Cashier() {
   const addItemsText = useTranslation('Add items to start an order');
   const loadingText = useTranslation('Loading menu...');
 
-  // Fetch menu items from database
+  // Fetch weather and menu items from database
   useEffect(() => {
-    const fetchMenuItems = async () => {
+    const fetchWeatherAndMenuItems = async () => {
       try {
+        // Fetch weather to determine season
+        const weatherResponse = await fetch('/api/weather');
+        let season: Season = 'fall/spring'; // Default
+        if (weatherResponse.ok) {
+          const weatherData = await weatherResponse.json();
+          if (weatherData.success && weatherData.season) {
+            season = weatherData.season as Season;
+            setCurrentSeason(season);
+          }
+        }
+
+        // Fetch menu items
         const response = await fetch('/api/menu');
         const data = await response.json();
         
         if (data.items) {
           // Ensure prices are numbers and map item field to name
-          const items = data.items.map((item: any) => ({
+          let items = data.items.map((item: any) => ({
             id: typeof item.id === 'string' ? parseInt(item.id) : item.id,
             name: item.item, // Map 'item' field to 'name' for cashier interface
             price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
-            category: item.category
+            category: item.category,
+            item: item.item // Keep original item field for filtering
           }));
+          
+          // Filter seasonal drinks based on current season
+          items = filterSeasonalDrinks(items, season);
+          
           setMenuItems(items);
           // Set first category as default
           const categories = [...new Set(items.map((item: MenuItem) => item.category))] as string[];
@@ -74,7 +94,7 @@ export default function Cashier() {
       }
     };
 
-    fetchMenuItems();
+    fetchWeatherAndMenuItems();
   }, []);
 
   const categories = [...new Set(menuItems.map(item => item.category))];
