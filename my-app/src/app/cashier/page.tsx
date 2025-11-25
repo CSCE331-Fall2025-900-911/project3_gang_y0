@@ -51,12 +51,14 @@ export default function Cashier() {
       try {
         const response = await fetch('/api/menu');
         const data = await response.json();
-        if (data.success) {
-          // Ensure prices are numbers
+        
+        if (data.items) {
+          // Ensure prices are numbers and map item field to name
           const items = data.items.map((item: any) => ({
-            ...item,
+            id: typeof item.id === 'string' ? parseInt(item.id) : item.id,
+            name: item.item, // Map 'item' field to 'name' for cashier interface
             price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
-            id: typeof item.id === 'string' ? parseInt(item.id) : item.id
+            category: item.category
           }));
           setMenuItems(items);
           // Set first category as default
