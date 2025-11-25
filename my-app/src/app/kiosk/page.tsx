@@ -145,7 +145,7 @@ export default function KioskPage() {
     return cart.reduce((sum, item) => sum + item.totalPrice, 0);
   };
 
-  const categories = Object.keys(menuData).filter(cat => cat !== 'Topping');
+  const categories = Object.keys(menuData || {}).filter(cat => cat !== 'Topping');
 
   if (loading) {
     return (
