@@ -32,7 +32,7 @@ const menuData: MenuSection[] = [
   },
   {
     title: 'Fruit Tea',
-    image: '/fruitdrink.png',
+    image: '/fruittea.png',
     drinks: [
       { name: 'Passion Fruit Tea', price: '$5.75' },
       { name: 'Mango Green Tea', price: '$6.00' },
@@ -44,7 +44,7 @@ const menuData: MenuSection[] = [
   },
   {
     title: 'Blended Drinks',
-    image: '/blendeddrink.png',
+    image: '/smoothie.png',
     drinks: [
       { name: 'Mango Smoothie', price: '$6.50' },
       { name: 'Strawberry Banana Smoothie', price: '$6.50' },
@@ -56,7 +56,7 @@ const menuData: MenuSection[] = [
   },
   {
     title: 'Specialty Drinks',
-    image: '/specialdrink.png',
+    image: '/specialty.png',
     drinks: [
       { name: 'Coffee Milk Tea', price: '$7.50' },
       { name: 'Oreo Milk Tea', price: '$6.75' },

@@ -65,7 +65,7 @@ export default function KioskPage() {
   const getItemImage = (category: string) => {
     const imageMap: { [key: string]: string } = {
       'Milk Tea': '/milktea.png',
-      'Fruit Tea': '/fruitdtea.png',
+      'Fruit Tea': '/fruittea.png',
       'Smoothie': '/smoothie.png',
       'Specialty': '/specialty.png'
     };
