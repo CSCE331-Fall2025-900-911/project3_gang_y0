@@ -43,6 +43,8 @@ export default function KioskPage() {
   });
   const [loading, setLoading] = useState(true);
   const [currentSeason, setCurrentSeason] = useState<Season>('fall/spring');
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState({ itemName: '', quantity: 0 });
 
   // Get text size class
   const { getTextSizeClass } = useTextSize();
@@ -66,6 +68,9 @@ export default function KioskPage() {
   const toppingsCountText = useTranslation('topping(s)');
   const iceLevelText = useTranslation('Ice Level');
   const sugarLevelText = useTranslation('Sugar Level');
+  const addedToCartText = useTranslation('Added to cart');
+  const itemText = useTranslation('item');
+  const itemsText = useTranslation('items');
 
   // Translate ice and sugar levels
   const iceLevels = useMemo(() => ICE_LEVELS, []);
@@ -102,6 +107,16 @@ export default function KioskPage() {
   useEffect(() => {
     fetchWeatherAndMenu();
   }, []);
+
+  // Auto-dismiss toast after 5 seconds
+  useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => {
+        setShowToast(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showToast]);
 
   const fetchWeatherAndMenu = async () => {
     try {
@@ -198,6 +213,14 @@ export default function KioskPage() {
     };
 
     setCart(prev => [...prev, cartItem]);
+    
+    // Show toast notification
+    setToastMessage({
+      itemName: menuItemTranslationMap[selectedItem.item] || selectedItem.item,
+      quantity: customization.quantity
+    });
+    setShowToast(true);
+    
     setShowCustomization(false);
     setSelectedItem(null);
   };
@@ -495,6 +518,30 @@ export default function KioskPage() {
               >
                 {addText} ${(calculateCurrentPrice() * customization.quantity).toFixed(2)}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div 
+          onClick={() => setShowToast(false)}
+          className={`fixed top-8 right-8 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-5 rounded-2xl shadow-[0_10px_40px_rgba(34,197,94,0.5)] cursor-pointer transform transition-all duration-300 ease-in-out z-50 border-2 border-white ${
+            showToast ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-[-100%] opacity-0 scale-95'
+          }`}
+        >
+          <div className="flex items-center space-x-4">
+            <div className="flex-shrink-0 bg-white rounded-full p-2">
+              <svg className="w-10 h-10 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <p className={`${getTextSizeClass('xl')} font-bold mb-1`}>{addedToCartText}!</p>
+              <p className={`${getTextSizeClass('lg')} font-medium`}>
+                {toastMessage.itemName} × {toastMessage.quantity} {toastMessage.quantity === 1 ? itemText : itemsText}
+              </p>
             </div>
           </div>
         </div>
