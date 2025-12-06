@@ -37,7 +37,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-white">
       <div className="absolute top-4 right-4 flex gap-2">
-        <button
+        {/* <button
           onClick={handleManager}
           className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 ${getTextSizeClass('sm')}`}
         >
@@ -48,7 +48,7 @@ export default function Login() {
           className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 ${getTextSizeClass('sm')}`}
         >
           {cashierText}
-        </button>
+        </button> */}
       </div>
 
       <div className="flex min-h-screen items-center justify-center">
