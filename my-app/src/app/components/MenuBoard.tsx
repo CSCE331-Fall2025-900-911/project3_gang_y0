@@ -69,7 +69,7 @@ export default function MenuBoard() {
   const { getTextSizeClass, textSize } = useTextSize();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 p-8 pt-24" data-text-size={textSize}>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 p-8" data-text-size={textSize}>
       <div className="mx-auto max-w-7xl">
         <h1 className={`mb-8 text-center font-bold text-gray-800 ${getTextSizeClass('5xl')}`}>
           Rigby's Boba Shop Menu

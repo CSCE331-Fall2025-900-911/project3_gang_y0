@@ -4,7 +4,7 @@ import ManagerTabs from '../components/ManagerTabs';
 
 export default function ManagerPage() {
   return (
-    <div className="min-h-screen bg-white flex items-start justify-center py-8 pt-24">
+    <div className="min-h-screen bg-white flex items-start justify-center py-8">
       <div className="w-[1200px] border border-gray-200 rounded-2xl shadow-sm bg-gradient-to-b from-white to-slate-50">
         <header className="px-6 py-5 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-3">

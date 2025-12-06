@@ -183,8 +183,8 @@ export default function Cashier() {
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 pt-16 ${getTextSizeClass('3xl')}`}>
-      <div className="flex h-[calc(100vh-4rem)]">
+    <div className={`min-h-screen bg-gray-50 ${getTextSizeClass('3xl')}`}>
+      <div className="flex h-screen">
         {/* Left Side - Menu Items */}
         <div className="w-2/3 overflow-y-auto bg-white p-6">
         <h1 className={`mb-6 font-bold text-gray-800 text-center`}>{cashierText}</h1>

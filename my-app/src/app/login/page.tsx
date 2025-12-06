@@ -35,7 +35,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-white pt-16">
+    <div className="min-h-screen bg-white">
       <div className="absolute top-4 right-4 flex gap-2">
         <button
           onClick={handleManager}

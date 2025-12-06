@@ -10,12 +10,12 @@ export default function NavigationBar() {
 
   const navItems = [
     { label: 'Menu Board', path: '/' },
-    { label: 'Kiosk', path: '/kiosk' },
+    { label: 'Kiosk', path: '/login' },
     { label: 'Employee Login', path: '/employee-login' },
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+    <nav className="w-full bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-end h-16">
           <div className="flex items-center gap-1">
