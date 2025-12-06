@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { filterSeasonalDrinks, type Season } from '@/lib/seasonalDrinks';
+import { useTranslation, useTranslations } from '@/hooks/useTranslation';
+import { useTextSize } from '@/contexts/TextSizeContext';
 
 interface MenuItem {
   id: number;
@@ -41,6 +43,61 @@ export default function KioskPage() {
   });
   const [loading, setLoading] = useState(true);
   const [currentSeason, setCurrentSeason] = useState<Season>('fall/spring');
+
+  // Get text size class
+  const { getTextSizeClass } = useTextSize();
+
+  // Static text translations
+  const menuCategoriesText = useTranslation('Menu Categories');
+  const yourOrderText = useTranslation('Your Order');
+  const yourCartIsEmptyText = useTranslation('Your cart is empty');
+  const checkoutText = useTranslation('Checkout');
+  const subtotalText = useTranslation('Subtotal');
+  const loadingMenuText = useTranslation('Loading menu...');
+  const iceText = useTranslation('Ice');
+  const sugarText = useTranslation('Sugar');
+  const toppingsText = useTranslation('Toppings');
+  const quantityText = useTranslation('Quantity');
+  const cancelText = useTranslation('Cancel');
+  const addText = useTranslation('Add');
+  const basePriceText = useTranslation('Base price');
+  const currentPriceText = useTranslation('Current Price');
+  const includesText = useTranslation('Includes');
+  const toppingsCountText = useTranslation('topping(s)');
+  const iceLevelText = useTranslation('Ice Level');
+  const sugarLevelText = useTranslation('Sugar Level');
+
+  // Translate ice and sugar levels
+  const iceLevels = useMemo(() => ICE_LEVELS, []);
+  const sugarLevels = useMemo(() => SUGAR_LEVELS, []);
+  const translatedIceLevels = useTranslations(iceLevels);
+  const translatedSugarLevels = useTranslations(sugarLevels);
+
+  // Translate categories and menu items
+  const categories = useMemo(() => {
+    return Object.keys(menuData || {}).filter(cat => cat !== 'Topping');
+  }, [menuData]);
+  
+  const translatedCategories = useTranslations(categories);
+
+  const allMenuItemNames = useMemo(() => {
+    const names: string[] = [];
+    Object.values(menuData).forEach(items => {
+      items.forEach(item => names.push(item.item));
+    });
+    return names;
+  }, [menuData]);
+
+  const translatedMenuItemNames = useTranslations(allMenuItemNames);
+
+  // Create a mapping for menu item translations
+  const menuItemTranslationMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    allMenuItemNames.forEach((name, index) => {
+      map[name] = translatedMenuItemNames[index] || name;
+    });
+    return map;
+  }, [allMenuItemNames, translatedMenuItemNames]);
 
   useEffect(() => {
     fetchWeatherAndMenu();
@@ -171,12 +228,10 @@ export default function KioskPage() {
     return cart.reduce((sum, item) => sum + item.totalPrice, 0);
   };
 
-  const categories = Object.keys(menuData || {}).filter(cat => cat !== 'Topping');
-
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-black text-xl">Loading menu...</div>
+        <div className={`text-black ${getTextSizeClass('xl')}`}>{loadingMenuText}</div>
       </div>
     );
   }
@@ -186,20 +241,20 @@ export default function KioskPage() {
       {/* Left Sidebar - Categories */}
       <div className="w-64 bg-white shadow-lg rounded-r-2xl">
         <div className="p-4 bg-gradient-to-r from-pink-100 to-purple-200 text-gray-800 rounded-tr-2xl">
-          <h1 className="text-xl font-bold">Menu Categories</h1>
+          <h1 className={`${getTextSizeClass('xl')} font-bold`}>{menuCategoriesText}</h1>
         </div>
         <nav className="p-4">
-          {categories.map((category) => (
+          {categories.map((category, index) => (
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`w-full text-left p-3 rounded-2xl mb-2 transition-all font-semibold ${
+              className={`w-full text-left p-3 rounded-2xl mb-2 transition-all font-semibold ${getTextSizeClass('base')} ${
                 selectedCategory === category
                   ? 'bg-gradient-to-r from-pink-50 to-purple-50 text-purple-600 shadow-md'
                   : 'text-gray-700 hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50'
               }`}
             >
-              {category}
+              {translatedCategories[index] || category}
             </button>
           ))}
         </nav>
@@ -207,7 +262,9 @@ export default function KioskPage() {
 
       {/* Main Content - Menu Items */}
       <div className="flex-1 p-6">
-        <h2 className="text-3xl font-bold text-gray-800 mb-6">{selectedCategory}</h2>
+        <h2 className={`${getTextSizeClass('3xl')} font-bold text-gray-800 mb-6`}>
+          {translatedCategories[categories.indexOf(selectedCategory)] || selectedCategory}
+        </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {menuData[selectedCategory]?.map((item) => (
             <div
@@ -228,8 +285,10 @@ export default function KioskPage() {
                 />
                 <span className="text-gray-500 hidden">Image Placeholder</span>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">{item.item}</h3>
-              <p className="text-purple-600 font-bold text-lg">${item.price.toFixed(2)}</p>
+              <h3 className={`${getTextSizeClass('lg')} font-semibold text-gray-800 mb-2`}>
+                {menuItemTranslationMap[item.item] || item.item}
+              </h3>
+              <p className={`${getTextSizeClass('lg')} text-purple-600 font-bold`}>${item.price.toFixed(2)}</p>
             </div>
           ))}
         </div>
@@ -238,31 +297,33 @@ export default function KioskPage() {
       {/* Right Sidebar - Cart */}
       <div className="w-80 bg-white shadow-lg rounded-l-2xl">
         <div className="p-4 bg-gradient-to-r from-green-200 to-teal-300 text-gray-800 rounded-tl-2xl">
-          <h2 className="text-xl font-bold">Your Order</h2>
+          <h2 className={`${getTextSizeClass('xl')} font-bold`}>{yourOrderText}</h2>
         </div>
         
         <div className="p-4 flex-1 overflow-y-auto max-h-[calc(100vh-300px)]">
           {cart.length === 0 ? (
-            <p className="text-gray-500 text-center">Your cart is empty</p>
+            <p className={`${getTextSizeClass('base')} text-gray-500 text-center`}>{yourCartIsEmptyText}</p>
           ) : (
             cart.map((cartItem) => (
               <div key={cartItem.id} className="mb-4 p-4 border border-gray-200 rounded-2xl bg-gradient-to-r from-pink-50 to-purple-50">
                 <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-semibold text-gray-800">{cartItem.menuItem.item}</h4>
+                  <h4 className={`${getTextSizeClass('base')} font-semibold text-gray-800`}>
+                    {menuItemTranslationMap[cartItem.menuItem.item] || cartItem.menuItem.item}
+                  </h4>
                   <button
                     onClick={() => removeFromCart(cartItem.id)}
-                    className="text-red-500 hover:text-red-700 font-bold text-lg"
+                    className={`${getTextSizeClass('lg')} text-red-500 hover:text-red-700 font-bold`}
                   >
                     ×
                   </button>
                 </div>
                 
-                <p className="text-sm text-gray-600">Ice: {cartItem.iceLevel}</p>
-                <p className="text-sm text-gray-600">Sugar: {cartItem.sugarLevel}</p>
+                <p className={`${getTextSizeClass('sm')} text-gray-600`}>{iceText}: {cartItem.iceLevel}</p>
+                <p className={`${getTextSizeClass('sm')} text-gray-600`}>{sugarText}: {cartItem.sugarLevel}</p>
                 
                 {cartItem.toppings.length > 0 && (
-                  <p className="text-sm text-gray-600">
-                    Toppings: {cartItem.toppings.map(t => t.item).join(', ')}
+                  <p className={`${getTextSizeClass('sm')} text-gray-600`}>
+                    {toppingsText}: {cartItem.toppings.map(t => menuItemTranslationMap[t.item] || t.item).join(', ')}
                   </p>
                 )}
                 
@@ -274,7 +335,7 @@ export default function KioskPage() {
                     >
                       -
                     </button>
-                    <span className="bg-white text-gray-800 px-4 py-1 border-t border-b border-purple-200 font-semibold">{cartItem.quantity}</span>
+                    <span className={`${getTextSizeClass('base')} bg-white text-gray-800 px-4 py-1 border-t border-b border-purple-200 font-semibold`}>{cartItem.quantity}</span>
                     <button
                       onClick={() => updateQuantity(cartItem.id, cartItem.quantity + 1)}
                       className="bg-white text-purple-600 px-3 py-1 rounded-r-lg border border-purple-200 hover:bg-purple-50"
@@ -282,7 +343,7 @@ export default function KioskPage() {
                       +
                     </button>
                   </div>
-                  <span className="font-bold text-purple-600 text-lg">${cartItem.totalPrice.toFixed(2)}</span>
+                  <span className={`${getTextSizeClass('lg')} font-bold text-purple-600`}>${cartItem.totalPrice.toFixed(2)}</span>
                 </div>
               </div>
             ))
@@ -291,11 +352,11 @@ export default function KioskPage() {
         
         <div className="p-4 border-t border-gray-200">
           <div className="flex justify-between items-center mb-4">
-            <span className="text-xl font-bold text-gray-800">Subtotal:</span>
-            <span className="text-xl font-bold text-purple-600">${getSubtotal().toFixed(2)}</span>
+            <span className={`${getTextSizeClass('xl')} font-bold text-gray-800`}>{subtotalText}:</span>
+            <span className={`${getTextSizeClass('xl')} font-bold text-purple-600`}>${getSubtotal().toFixed(2)}</span>
           </div>
-          <button className="w-full bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 py-3 rounded-2xl font-bold hover:from-pink-300 hover:to-purple-400 transition-all shadow-lg">
-            Checkout
+          <button className={`${getTextSizeClass('base')} w-full bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 py-3 rounded-2xl font-bold hover:from-pink-300 hover:to-purple-400 transition-all shadow-lg`}>
+            {checkoutText}
           </button>
         </div>
       </div>
@@ -311,41 +372,43 @@ export default function KioskPage() {
                 className="w-16 h-16 object-contain rounded-2xl mr-4 bg-gradient-to-r from-pink-50 to-purple-50 p-2"
               />
               <div>
-                <h3 className="text-xl font-bold text-gray-800">{selectedItem.item}</h3>
-                <p className="text-gray-600">Base price: ${selectedItem.price.toFixed(2)}</p>
+                <h3 className={`${getTextSizeClass('xl')} font-bold text-gray-800`}>
+                  {menuItemTranslationMap[selectedItem.item] || selectedItem.item}
+                </h3>
+                <p className={`${getTextSizeClass('base')} text-gray-600`}>{basePriceText}: ${selectedItem.price.toFixed(2)}</p>
               </div>
             </div>
             
             {/* Dynamic Total Price */}
             <div className="mb-4 p-4 bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl">
               <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold text-gray-800">Current Price:</span>
-                <span className="text-2xl font-bold text-purple-600">
+                <span className={`${getTextSizeClass('lg')} font-semibold text-gray-800`}>{currentPriceText}:</span>
+                <span className={`${getTextSizeClass('2xl')} font-bold text-purple-600`}>
                   ${(calculateCurrentPrice() * customization.quantity).toFixed(2)}
                 </span>
               </div>
               {customization.selectedToppings.length > 0 && (
-                <p className="text-sm text-gray-600 mt-1">
-                  Includes {customization.selectedToppings.length} topping(s)
+                <p className={`${getTextSizeClass('sm')} text-gray-600 mt-1`}>
+                  {includesText} {customization.selectedToppings.length} {toppingsCountText}
                 </p>
               )}
             </div>
             
             {/* Ice Level Selection */}
             <div className="mb-4">
-              <h4 className="font-semibold text-gray-800 mb-2">Ice Level</h4>
+              <h4 className={`${getTextSizeClass('base')} font-semibold text-gray-800 mb-2`}>{iceLevelText}</h4>
               <div className="flex gap-2">
-                {ICE_LEVELS.map((level) => (
+                {ICE_LEVELS.map((level, index) => (
                   <button
                     key={level}
                     onClick={() => setCustomization(prev => ({ ...prev, iceLevel: level }))}
-                    className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                    className={`${getTextSizeClass('base')} px-4 py-2 rounded-xl font-medium transition-all ${
                       customization.iceLevel === level
                         ? 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 shadow-lg'
                         : 'bg-gradient-to-r from-pink-50 to-purple-50 text-gray-700 hover:from-pink-100 hover:to-purple-100'
                     }`}
                   >
-                    {level}
+                    {translatedIceLevels[index] || level}
                   </button>
                 ))}
               </div>
@@ -353,19 +416,19 @@ export default function KioskPage() {
 
             {/* Sugar Level Selection */}
             <div className="mb-4">
-              <h4 className="font-semibold text-gray-800 mb-2">Sugar Level</h4>
+              <h4 className={`${getTextSizeClass('base')} font-semibold text-gray-800 mb-2`}>{sugarLevelText}</h4>
               <div className="flex gap-2">
-                {SUGAR_LEVELS.map((level) => (
+                {SUGAR_LEVELS.map((level, index) => (
                   <button
                     key={level}
                     onClick={() => setCustomization(prev => ({ ...prev, sugarLevel: level }))}
-                    className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                    className={`${getTextSizeClass('base')} px-4 py-2 rounded-xl font-medium transition-all ${
                       customization.sugarLevel === level
                         ? 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 shadow-lg'
                         : 'bg-gradient-to-r from-pink-50 to-purple-50 text-gray-700 hover:from-pink-100 hover:to-purple-100'
                     }`}
                   >
-                    {level}
+                    {translatedSugarLevels[index] || level}
                   </button>
                 ))}
               </div>
@@ -373,7 +436,7 @@ export default function KioskPage() {
 
             {/* Toppings Selection */}
             <div className="mb-4">
-              <h4 className="font-semibold text-gray-800 mb-2">Toppings</h4>
+              <h4 className={`${getTextSizeClass('base')} font-semibold text-gray-800 mb-2`}>{toppingsText}</h4>
               <div className="space-y-2 max-h-32 overflow-y-auto">
                 {menuData.Topping?.map((topping) => (
                   <label key={topping.id} className="flex items-center p-3 hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50 rounded-xl cursor-pointer">
@@ -383,8 +446,10 @@ export default function KioskPage() {
                       onChange={() => toggleTopping(topping)}
                       className="mr-3 w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500"
                     />
-                    <span className="text-gray-800 flex-1 font-medium">{topping.item}</span>
-                    <span className="text-purple-600 font-bold">+${topping.price.toFixed(2)}</span>
+                    <span className={`${getTextSizeClass('base')} text-gray-800 flex-1 font-medium`}>
+                      {menuItemTranslationMap[topping.item] || topping.item}
+                    </span>
+                    <span className={`${getTextSizeClass('base')} text-purple-600 font-bold`}>+${topping.price.toFixed(2)}</span>
                   </label>
                 ))}
               </div>
@@ -392,7 +457,7 @@ export default function KioskPage() {
 
             {/* Quantity */}
             <div className="mb-6">
-              <h4 className="font-semibold text-gray-800 mb-2">Quantity</h4>
+              <h4 className={`${getTextSizeClass('base')} font-semibold text-gray-800 mb-2`}>{quantityText}</h4>
               <div className="flex items-center">
                 <button
                   onClick={() => setCustomization(prev => ({ 
@@ -403,7 +468,7 @@ export default function KioskPage() {
                 >
                   -
                 </button>
-                <span className="bg-white text-gray-800 px-6 py-2 border-t border-b border-purple-200 font-bold text-lg">{customization.quantity}</span>
+                <span className={`${getTextSizeClass('lg')} bg-white text-gray-800 px-6 py-2 border-t border-b border-purple-200 font-bold`}>{customization.quantity}</span>
                 <button
                   onClick={() => setCustomization(prev => ({ 
                     ...prev, 
@@ -420,15 +485,15 @@ export default function KioskPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowCustomization(false)}
-                className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl hover:bg-gray-300 transition-colors font-semibold"
+                className={`${getTextSizeClass('base')} flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl hover:bg-gray-300 transition-colors font-semibold`}
               >
-                Cancel
+                {cancelText}
               </button>
               <button
                 onClick={addToCart}
-                className="flex-1 bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 py-3 rounded-xl hover:from-pink-300 hover:to-purple-400 transition-all font-bold shadow-lg"
+                className={`${getTextSizeClass('base')} flex-1 bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 py-3 rounded-xl hover:from-pink-300 hover:to-purple-400 transition-all font-bold shadow-lg`}
               >
-                Add ${(calculateCurrentPrice() * customization.quantity).toFixed(2)}
+                {addText} ${(calculateCurrentPrice() * customization.quantity).toFixed(2)}
               </button>
             </div>
           </div>
