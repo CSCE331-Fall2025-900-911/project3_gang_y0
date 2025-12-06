@@ -184,7 +184,7 @@ export default function Home() {
   }, [translatedTitles, translatedRegularDrinkNames, translatedSeasonalDrinkNames, seasonalDrinks, loadingSeasonal, seasonalTitleText]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 p-8 pt-24">
       <div className="mx-auto max-w-7xl">
         <h1 className={`mb-8 text-center font-bold text-gray-800 ${getTextSizeClass('5xl')}`}>
           {bobaShopMenuText}

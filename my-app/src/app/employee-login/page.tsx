@@ -43,7 +43,7 @@ export default function EmployeeLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center">
+    <div className="min-h-screen bg-white flex items-center justify-center pt-16">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md border border-gray-200">
         <h1 className={`font-bold text-center mb-6 text-black ${getTextSizeClass('2xl')}`}>Employee Login</h1>
         
