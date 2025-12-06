@@ -72,7 +72,7 @@ const menuData: MenuSection[] = [
 export default function Home() {
   const router = useRouter();
   const { getTextSizeClass } = useTextSize();
-  const bobaShopMenuText = useTranslation('Boba Shop Menu');
+  const bobaShopMenuText = useTranslation('Rigby\'s Boba Shop Menu');
   const seasonalTitleText = useTranslation('Seasonal');
   const [seasonalDrinks, setSeasonalDrinks] = useState<Drink[]>([]);
   const [currentSeason, setCurrentSeason] = useState<Season>('fall/spring');
