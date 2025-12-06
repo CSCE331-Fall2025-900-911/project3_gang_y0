@@ -8,13 +8,13 @@
     "start": "next start"
   },
   "dependencies": {
-    "@types/pg": "^8.15.6",
     "@auth/core": "^0.34.3",
-    "next": "^16.0.1",
+    "@types/pg": "^8.15.6",
+    "next": "^16.0.7",
     "next-auth": "^4.24.13",
     "pg": "^8.16.3",
-    "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react": "latest",
+    "react-dom": "latest"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
