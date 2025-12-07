@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
 import { filterSeasonalDrinks, type Season } from '@/lib/seasonalDrinks';
 import PrizeSpinner from '@/components/PrizeSpinner';
 import { useTranslation, useTranslations } from '@/hooks/useTranslation';
@@ -31,6 +32,7 @@ const ICE_LEVELS = ['Light', 'Regular', 'Extra'];
 const SUGAR_LEVELS = ['25%', '50%', '75%', '100%'];
 
 export default function KioskPage() {
+  const { data: session } = useSession();
   const [menuData, setMenuData] = useState<MenuData>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -50,6 +52,7 @@ export default function KioskPage() {
   const [toastMessage, setToastMessage] = useState({ itemName: '', quantity: 0 });
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | null>(null);
   const [paymentError, setPaymentError] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   // Get text size class
   const { getTextSizeClass } = useTextSize();
@@ -276,21 +279,58 @@ export default function KioskPage() {
     setHasSpun(true);
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     // Validate payment method is selected
     if (!paymentMethod) {
       setPaymentError(true);
       return;
     }
 
-    // Clear cart and reset spinner
-    setCart([]);
-    setDiscount(0);
-    setHasSpun(false);
-    setPaymentMethod(null);
-    setPaymentError(false);
-    // In a real app, you would process the payment here
-    alert('Order placed! Cart cleared.');
+    if (isCheckingOut) return; // Prevent double submission
+
+    setIsCheckingOut(true);
+
+    try {
+      // For now, kiosk orders are guest orders (customer_id = null)
+      // In the future, you could implement customer phone login on kiosk
+      const customerId = null;
+      
+      // Calculate total after discount
+      const total = getTotal();
+
+      // Send order to backend
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cart,
+          total,
+          customerId,
+          employeeId: null, // Kiosk orders have no employee
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Clear cart and reset spinner on success
+        setCart([]);
+        setDiscount(0);
+        setHasSpun(false);
+        setPaymentMethod(null);
+        setPaymentError(false);
+        alert(`Order placed successfully! Transaction ID: ${data.transactionId}`);
+      } else {
+        alert('Failed to place order. Please try again.');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('An error occurred while placing your order. Please try again.');
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   if (loading) {
@@ -480,16 +520,16 @@ export default function KioskPage() {
 
           <button 
             onClick={handleCheckout}
-            disabled={cart.length === 0}
+            disabled={cart.length === 0 || isCheckingOut}
             className={`w-full py-3 rounded-2xl font-bold transition-all shadow-lg ${
-              cart.length === 0
+              cart.length === 0 || isCheckingOut
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : paymentError
                 ? 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 hover:from-pink-300 hover:to-purple-400 ring-2 ring-red-400'
                 : 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 hover:from-pink-300 hover:to-purple-400'
             }`}
           >
-            {checkoutText}
+            {isCheckingOut ? 'Processing...' : checkoutText}
           </button>
         </div>
       </div>
