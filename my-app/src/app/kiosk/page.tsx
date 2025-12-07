@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { filterSeasonalDrinks, type Season } from '@/lib/seasonalDrinks';
 import PrizeSpinner from '@/components/PrizeSpinner';
@@ -32,6 +33,7 @@ const ICE_LEVELS = ['Light', 'Regular', 'Extra'];
 const SUGAR_LEVELS = ['25%', '50%', '75%', '100%'];
 
 export default function KioskPage() {
+  const router = useRouter();
   const { data: session } = useSession();
   const [menuData, setMenuData] = useState<MenuData>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -53,6 +55,9 @@ export default function KioskPage() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | null>(null);
   const [paymentError, setPaymentError] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [orderNumber, setOrderNumber] = useState<number>(0);
+  const [timeRemaining, setTimeRemaining] = useState(30); // 30 seconds timeout
 
   // Get text size class
   const { getTextSizeClass } = useTextSize();
@@ -85,6 +90,13 @@ export default function KioskPage() {
   const selectPaymentText = useTranslation('Please select a payment method');
   const totalText = useTranslation('Total');
   const discountText = useTranslation('Discount');
+  const orderConfirmedText = useTranslation('Order Confirmed');
+  const yourOrderNumberText = useTranslation('Your Order Number');
+  const thankYouText = useTranslation('Thank you for your order!');
+  const pickUpText = useTranslation('Please pick up your order when called');
+  const returningToLoginText = useTranslation('Returning to login in');
+  const secondsText = useTranslation('seconds');
+  const returnNowText = useTranslation('Return to Login Now');
 
   // Translate ice and sugar levels
   const iceLevels = useMemo(() => ICE_LEVELS, []);
@@ -131,6 +143,18 @@ export default function KioskPage() {
       return () => clearTimeout(timer);
     }
   }, [showToast]);
+
+  // Countdown timer for confirmation page
+  useEffect(() => {
+    if (showConfirmation && timeRemaining > 0) {
+      const timer = setTimeout(() => {
+        setTimeRemaining(prev => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (showConfirmation && timeRemaining === 0) {
+      router.push('/login');
+    }
+  }, [showConfirmation, timeRemaining, router]);
 
   const fetchWeatherAndMenu = async () => {
     try {
@@ -315,13 +339,20 @@ export default function KioskPage() {
       const data = await response.json();
 
       if (data.success) {
+        // Generate random 2-digit order number (10-99)
+        const randomOrderNum = Math.floor(Math.random() * 90) + 10;
+        setOrderNumber(randomOrderNum);
+        
         // Clear cart and reset spinner on success
         setCart([]);
         setDiscount(0);
         setHasSpun(false);
         setPaymentMethod(null);
         setPaymentError(false);
-        alert(`Order placed successfully! Transaction ID: ${data.transactionId}`);
+        
+        // Show confirmation page
+        setShowConfirmation(true);
+        setTimeRemaining(30); // Reset timer to 30 seconds
       } else {
         alert('Failed to place order. Please try again.');
       }
@@ -693,6 +724,60 @@ export default function KioskPage() {
                 {toastMessage.itemName} × {toastMessage.quantity} {toastMessage.quantity === 1 ? itemText : itemsText}
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Order Confirmation Modal */}
+      {showConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-white p-12 rounded-3xl max-w-2xl w-full mx-4 shadow-2xl text-center">
+            {/* Success Icon */}
+            <div className="flex justify-center mb-6">
+              <div className="bg-green-100 rounded-full p-6">
+                <svg className="w-24 h-24 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Order Confirmed */}
+            <h2 className={`${getTextSizeClass('4xl')} font-bold text-gray-800 mb-4`}>
+              {orderConfirmedText}!
+            </h2>
+
+            {/* Order Number */}
+            <div className="mb-8">
+              <p className={`${getTextSizeClass('xl')} text-gray-600 mb-3`}>{yourOrderNumberText}</p>
+              <div className="bg-gradient-to-r from-pink-100 to-purple-100 rounded-2xl py-6 px-8 inline-block">
+                <p className={`${getTextSizeClass('6xl')} font-bold text-purple-600`}>
+                  #{orderNumber}
+                </p>
+              </div>
+            </div>
+
+            {/* Thank You Message */}
+            <p className={`${getTextSizeClass('2xl')} text-gray-700 mb-2 font-semibold`}>
+              {thankYouText}
+            </p>
+            <p className={`${getTextSizeClass('lg')} text-gray-600 mb-8`}>
+              {pickUpText}
+            </p>
+
+            {/* Timer */}
+            <div className="mb-6">
+              <p className={`${getTextSizeClass('base')} text-gray-500`}>
+                {returningToLoginText} {timeRemaining} {secondsText}
+              </p>
+            </div>
+
+            {/* Return Button */}
+            <button
+              onClick={() => router.push('/login')}
+              className={`${getTextSizeClass('xl')} bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-12 py-4 rounded-2xl hover:from-pink-300 hover:to-purple-400 transition-all font-bold shadow-lg`}
+            >
+              {returnNowText}
+            </button>
           </div>
         </div>
       )}
