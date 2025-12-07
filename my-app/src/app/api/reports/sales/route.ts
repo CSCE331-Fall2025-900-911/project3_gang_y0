@@ -20,9 +20,14 @@ export async function GET(req: Request) {
         SELECT
           m.id AS menu_item_id,
           m.item AS menu_item,
-          COUNT(ti.id) FILTER (WHERE t.timestamp >= $1 AND t.timestamp <= $2) AS qty_sold,
-          (COUNT(ti.id) FILTER (WHERE t.timestamp >= $1 AND t.timestamp <= $2) * m.price)::numeric(12,2)
-            AS total_sales
+          COUNT(ti.id) FILTER (
+            WHERE (t.timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago') >= $1
+              AND (t.timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago') <= $2
+          ) AS qty_sold,
+          (COUNT(ti.id) FILTER (
+            WHERE (t.timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago') >= $1
+              AND (t.timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago') <= $2
+          ) * m.price)::numeric(12,2) AS total_sales
         FROM menu m
         LEFT JOIN transaction_items ti ON ti.item_id = m.id
         LEFT JOIN transactions t ON t.id = ti.transaction_id
