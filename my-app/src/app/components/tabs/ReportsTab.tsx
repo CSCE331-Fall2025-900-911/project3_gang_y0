@@ -4,19 +4,32 @@ import { useEffect, useState } from 'react';
 
 type ReportTab = 'x' | 'z' | 'usage' | 'sales';
 
+function localISODate() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+}
+
 export default function ReportsTab() {
   const [active, setActive] = useState<ReportTab>('x');
   const [data, setData] = useState<any>(null);
 
+  const [from, setFrom] = useState<string>(localISODate);
+  const [to, setTo] = useState<string>(localISODate);
+
   useEffect(() => {
     if (active !== 'z') fetchReport(active);
-  }, [active]);
+  }, [active, from, to]);
 
   async function fetchReport(type: ReportTab) {
     let url = '';
     if (type === 'x') url = '/api/reports/x';
-    if (type === 'usage') url = '/api/reports/usage?from=2025-11-01T00:00:00Z&to=2025-11-17T23:59:59Z';
-    if (type === 'sales') url = '/api/reports/sales?from=2025-11-01T00:00:00Z&to=2025-11-17T23:59:59Z';
+
+    const fromTs = `${from}T00:00:00`;
+    const toTs = `${to}T23:59:59`;
+
+    if (type === 'usage') url = `/api/reports/usage?from=${fromTs}&to=${toTs}`;
+    if (type === 'sales') url = `/api/reports/sales?from=${fromTs}&to=${toTs}`;
 
     const res = await fetch(url);
     const json = await res.json();
@@ -31,32 +44,29 @@ export default function ReportsTab() {
   async function runZReport() {
     const res = await fetch('/api/reports/z', { method: 'POST' });
     const json = await res.json();
-
-    if (!json || json.length === 0) {
-      setData({ message: 'Z-Report completed: all transactions deleted for current day' });
-    } else {
-      setData(json);
-    }
+    setData(
+      json.length === 0
+        ? { message: 'Z-Report completed: all transactions deleted for current day' }
+        : json
+    );
   }
 
   const tabs = [
     { id: 'x', label: 'X-Report' },
     { id: 'z', label: 'Z-Report' },
     { id: 'usage', label: 'Product Usage' },
-    { id: 'sales', label: 'Sales Report' }
+    { id: 'sales', label: 'Sales Report' },
   ] as const;
 
   return (
     <div>
       <nav className="flex gap-2 border-b pb-4 mb-4">
-        {tabs.map(t => (
+        {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setActive(t.id)}
             className={`px-3 py-2 rounded-t-lg font-medium ${
-              active === t.id
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'bg-white text-blue-800 border border-gray-200'
+              active === t.id ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-blue-800 border border-gray-200'
             }`}
           >
             {t.label}
@@ -64,12 +74,39 @@ export default function ReportsTab() {
         ))}
       </nav>
 
+      {(active === 'sales' || active === 'usage') && (
+        <div className="flex gap-2 mb-4 items-center">
+          <label>
+            From:{' '}
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="border p-1 rounded"
+            />
+          </label>
+          <label>
+            To:{' '}
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="border p-1 rounded"
+            />
+          </label>
+
+          <button
+            onClick={() => fetchReport(active)}
+            className="px-3 py-2 bg-blue-600 text-white rounded shadow"
+          >
+            Refresh
+          </button>
+        </div>
+      )}
+
       {active === 'z' && (
         <div className="mb-4">
-          <button
-            onClick={runZReport}
-            className="px-4 py-2 bg-red-600 text-white rounded shadow"
-          >
+          <button onClick={runZReport} className="px-4 py-2 bg-red-600 text-white rounded shadow">
             Run Z-Report
           </button>
         </div>

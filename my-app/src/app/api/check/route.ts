@@ -1,36 +1,41 @@
-import { NextRequest, NextResponse } from "next/server"
-import { Pool } from "pg"
+import { NextResponse } from 'next/server';
+import { pool } from '@/lib/db';
 
-const pool = new Pool({
-	host: process.env.PG_HOST,
-	user: process.env.PG_USER,
-	password: process.env.PG_PASSWORD,
-	database: process.env.PG_DATABASE,
-	port: Number(process.env.PG_PORT),
-})
+export async function GET(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const from = url.searchParams.get('from');
+    const to = url.searchParams.get('to');
 
-export async function GET() {
-	const client = await pool.connect()
-	try {
-		const res = await client.query(
-			"SELECT id, employee_id, timestamp, status FROM check_ins ORDER BY timestamp DESC"
-		)
-		return NextResponse.json(res.rows)
-	} finally {
-		client.release()
-	}
-}
+    if (!from || !to) {
+      return NextResponse.json(
+        { error: 'from and to query params required (ISO timestamps)' },
+        { status: 400 }
+      );
+    }
 
-export async function POST(req: NextRequest) {
-	const body = await req.json()
-	const client = await pool.connect()
-	try {
-		const res = await client.query(
-			"INSERT INTO check_ins (employee_id, timestamp, status) VALUES ($1, $2, $3) RETURNING id, employee_id, timestamp, status",
-			[body.employee_id, body.timestamp, body.status]
-		)
-		return NextResponse.json(res.rows[0])
-	} finally {
-		client.release()
-	}
+    const q = `
+      SELECT
+        m.id AS menu_item_id,
+        m.item AS menu_item,
+        COUNT(ti.*) AS qty_sold,
+        (COUNT(ti.*) * COALESCE(m.price, 0))::numeric(12,2) AS total_sales
+      FROM transaction_items ti
+      JOIN transactions t ON t.id = ti.transaction_id
+      JOIN menu m ON m.id = ti.item_id
+      WHERE t.timestamp >= ($1 || ' America/Chicago')::timestamptz
+        AND t.timestamp <= ($2 || ' America/Chicago')::timestamptz
+      GROUP BY m.id, m.item, m.price
+      ORDER BY total_sales DESC;
+    `;
+
+    const client = await pool.connect();
+    const { rows } = await client.query(q, [from, to]);
+    client.release();
+
+    return NextResponse.json(rows);
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }
