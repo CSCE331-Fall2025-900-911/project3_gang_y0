@@ -43,49 +43,69 @@ export default function EmployeeLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md border border-gray-200">
-        <h1 className={`font-bold text-center mb-6 text-black ${getTextSizeClass('2xl')}`}>Employee Login</h1>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className={`block font-medium text-black mb-2 ${getTextSizeClass('sm')}`}>
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500 ${getTextSizeClass('base')}`}
-              value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
-            />
-          </div>
-          
-          <div>
-            <label className={`block font-medium text-black mb-2 ${getTextSizeClass('sm')}`}>
-              Password
-            </label>
-            <input
-              type="password"
-              required
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500 ${getTextSizeClass('base')}`}
-              value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
-            />
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 p-8">
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="w-full max-w-md">
+          <div className="rounded-2xl bg-white p-8 shadow-lg">
+            <div className="text-center mb-8">
+              <h1 className={`font-bold text-gray-800 ${getTextSizeClass('3xl')}`}>Employee Login</h1>
+            </div>
 
-          {error && (
-            <div className={`text-red-600 text-center bg-red-50 p-2 rounded ${getTextSizeClass('sm')}`}>{error}</div>
-          )}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className={`block font-semibold text-gray-800 mb-3 ${getTextSizeClass('base')}`}>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  className={`w-full px-4 py-3 border ${
+                    error ? 'border-red-500' : 'border-gray-300'
+                  } rounded-2xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all ${getTextSizeClass('base')}`}
+                  value={formData.email}
+                  onChange={(e) => {
+                    setFormData({...formData, email: e.target.value});
+                    setError('');
+                  }}
+                  disabled={loading}
+                />
+              </div>
+              
+              <div>
+                <label className={`block font-semibold text-gray-800 mb-3 ${getTextSizeClass('base')}`}>
+                  Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  className={`w-full px-4 py-3 border ${
+                    error ? 'border-red-500' : 'border-gray-300'
+                  } rounded-2xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all ${getTextSizeClass('base')}`}
+                  value={formData.password}
+                  onChange={(e) => {
+                    setFormData({...formData, password: e.target.value});
+                    setError('');
+                  }}
+                  disabled={loading}
+                />
+              </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${getTextSizeClass('base')}`}
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
+              {error && (
+                <p className={`mt-2 text-red-600 ${getTextSizeClass('sm')}`}>
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full px-4 py-3 bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 rounded-2xl font-bold hover:from-pink-300 hover:to-purple-400 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${getTextSizeClass('base')}`}
+              >
+                {loading ? 'Signing in...' : 'Sign In'}
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   );
