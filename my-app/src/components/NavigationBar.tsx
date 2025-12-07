@@ -11,7 +11,7 @@ export default function NavigationBar() {
   const navItems = [
     { label: 'Menu Board', path: '/' },
     { label: 'Kiosk', path: '/login' },
-    { label: 'Employee Login', path: '/employee-login' },
+  
   ];
 
   return (
