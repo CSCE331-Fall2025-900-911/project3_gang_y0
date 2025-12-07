@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from "next-auth/react";
 import { useTranslation } from '@/hooks/useTranslation';
@@ -8,14 +9,18 @@ import { useTextSize } from '@/contexts/TextSizeContext';
 export default function Login() {
   const router = useRouter();
   const { getTextSizeClass } = useTextSize();
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   
   // Translations
   const managerText = useTranslation('Manager');
   const cashierText = useTranslation('Cashier');
   const customerLoginText = useTranslation('Customer Login');
-  const emailText = useTranslation('Email');
-  const emailPlaceholder = useTranslation('Enter your email');
+  const phoneNumberText = useTranslation('Phone Number');
+  const phoneNumberPlaceholder = useTranslation('Enter your phone number');
   const loginText = useTranslation('Login');
+  const loginWithGoogleText = useTranslation('Login with Google');
   const guestText = useTranslation('Continue as Guest');
 
   const handleGoogleLogin = () => {
@@ -34,57 +39,108 @@ export default function Login() {
     router.push('/employee-login');
   };
 
+  const handlePhoneLogin = async () => {
+    setError('');
+    
+    if (!phoneNumber.trim()) {
+      setError('Please enter a phone number');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const response = await fetch('/api/auth/customer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phoneNumber }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Phone number not found');
+        setLoading(false);
+        return;
+      }
+
+      // Success - redirect to kiosk
+      router.push('/kiosk');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('An error occurred. Please try again.');
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-white">
-      <div className="absolute top-4 right-4 flex gap-2">
-        <button
-          onClick={handleManager}
-          className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 ${getTextSizeClass('sm')}`}
-        >
-          {managerText}
-        </button>
-        <button
-          onClick={handleCashier}
-          className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 ${getTextSizeClass('sm')}`}
-        >
-          {cashierText}
-        </button>
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 p-8">
       <div className="flex min-h-screen items-center justify-center">
-        <div className="w-full max-w-md space-y-6 p-8">
-          <div className="text-center">
-            <h1 className={`font-semibold text-black mb-8 ${getTextSizeClass('2xl')}`}>{customerLoginText}</h1>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className={`block font-medium text-black mb-2 ${getTextSizeClass('sm')}`}>
-                {emailText}
-              </label>
-              <input
-                type="email"
-                className={`w-full px-4 py-2 border border-gray-300 rounded bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500 ${getTextSizeClass('base')}`}
-                placeholder={emailPlaceholder}
-              />
+        <div className="w-full max-w-md">
+          <div className="rounded-2xl bg-white p-8 shadow-lg">
+            <div className="text-center mb-8">
+              <h1 className={`font-bold text-gray-800 ${getTextSizeClass('3xl')}`}>{customerLoginText}</h1>
             </div>
-            
-            <button
-              onClick={handleGoogleLogin}
-              className={`w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 ${getTextSizeClass('base')}`}
-            >
-              {loginText}
-            </button>
 
-            <button
-              onClick={handleGuest}
-              className={`w-full px-4 py-2 bg-gray-200 text-black rounded hover:bg-gray-300 ${getTextSizeClass('base')}`}
-            >
-              {guestText}
-            </button>
+            <div className="space-y-6">
+              <div>
+                <label className={`block font-semibold text-gray-800 mb-3 ${getTextSizeClass('base')}`}>
+                  {phoneNumberText}
+                </label>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => {
+                    setPhoneNumber(e.target.value);
+                    setError('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handlePhoneLogin();
+                    }
+                  }}
+                  className={`w-full px-4 py-3 border ${
+                    error ? 'border-red-500' : 'border-gray-300'
+                  } rounded-2xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all ${getTextSizeClass('base')}`}
+                  placeholder={phoneNumberPlaceholder}
+                  disabled={loading}
+                />
+                {error && (
+                  <p className={`mt-2 text-red-600 ${getTextSizeClass('sm')}`}>
+                    {error}
+                  </p>
+                )}
+              </div>
+              
+              <button
+                onClick={handlePhoneLogin}
+                disabled={loading}
+                className={`w-full px-4 py-3 bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 rounded-2xl font-bold hover:from-pink-300 hover:to-purple-400 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${getTextSizeClass('base')}`}
+              >
+                {loading ? 'Logging in...' : loginText}
+              </button>
+
+              <div className="pt-6 space-y-4 border-t border-gray-200">
+                <button
+                  onClick={handleGoogleLogin}
+                  className={`w-full px-4 py-3 bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 rounded-2xl font-bold hover:from-pink-300 hover:to-purple-400 transition-all shadow-lg ${getTextSizeClass('base')}`}
+                >
+                  {loginWithGoogleText}
+                </button>
+
+                <button
+                  onClick={handleGuest}
+                  className={`w-full px-4 py-3 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-700 rounded-2xl font-semibold hover:from-pink-100 hover:to-purple-100 transition-all ${getTextSizeClass('base')}`}
+                >
+                  {guestText}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-        </div>
+      </div>
     </div>
     );
 }

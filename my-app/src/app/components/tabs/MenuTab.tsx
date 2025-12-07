@@ -33,16 +33,29 @@ export default function MenuTab() {
   }, []);
 
   async function fetchMenu() {
+  try {
     const res = await fetch('/api/menu');
-    const data = await res.json();
-    setMenuItems(data.items);
+    if (!res.ok) return setMenuItems([]);
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : {};
+    setMenuItems(data.items ?? []);
+  } catch {
+    setMenuItems([]);
   }
+}
 
-  async function fetchInventory() {
+async function fetchInventory() {
+  try {
     const res = await fetch('/api/inventory');
-    const data = await res.json();
-    setInventoryItems(data);
+    if (!res.ok) return setInventoryItems([]);
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : [];
+    setInventoryItems(data ?? []);
+  } catch {
+    setInventoryItems([]);
   }
+}
+
 
   function toggleInventory(id: number) {
     setForm(prev => {

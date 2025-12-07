@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { filterSeasonalDrinks, type Season } from '@/lib/seasonalDrinks';
+import PrizeSpinner from '@/components/PrizeSpinner';
 import { useTranslation, useTranslations } from '@/hooks/useTranslation';
 import { useTextSize } from '@/contexts/TextSizeContext';
 
@@ -43,6 +44,8 @@ export default function KioskPage() {
   });
   const [loading, setLoading] = useState(true);
   const [currentSeason, setCurrentSeason] = useState<Season>('fall/spring');
+  const [discount, setDiscount] = useState(0);
+  const [hasSpun, setHasSpun] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState({ itemName: '', quantity: 0 });
 
@@ -251,6 +254,31 @@ export default function KioskPage() {
     return cart.reduce((sum, item) => sum + item.totalPrice, 0);
   };
 
+  const getDiscountAmount = () => {
+    const subtotal = getSubtotal();
+    return (subtotal * discount) / 100;
+  };
+
+  const getTotal = () => {
+    return getSubtotal() - getDiscountAmount();
+  };
+
+  const handleSpinComplete = (discountPercent: number) => {
+    setDiscount(discountPercent);
+    setHasSpun(true);
+  };
+
+  const handleCheckout = () => {
+    // Clear cart and reset spinner
+    setCart([]);
+    setDiscount(0);
+    setHasSpun(false);
+    // In a real app, you would process the payment here
+    alert('Order placed! Cart cleared.');
+  };
+
+  const categories = Object.keys(menuData || {}).filter(cat => cat !== 'Topping');
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -318,12 +346,17 @@ export default function KioskPage() {
       </div>
 
       {/* Right Sidebar - Cart */}
-      <div className="w-80 bg-white shadow-lg rounded-l-2xl">
+      <div className="w-80 bg-white shadow-lg rounded-l-2xl flex flex-col">
         <div className="p-4 bg-gradient-to-r from-green-200 to-teal-300 text-gray-800 rounded-tl-2xl">
-          <h2 className={`${getTextSizeClass('xl')} font-bold`}>{yourOrderText}</h2>
+          <h2 className="text-xl font-bold">Your Order</h2>
         </div>
         
-        <div className="p-4 flex-1 overflow-y-auto max-h-[calc(100vh-300px)]">
+        {/* Prize Spinner */}
+        <div className="p-4 border-b border-gray-200">
+          <PrizeSpinner onSpinComplete={handleSpinComplete} hasSpun={hasSpun} />
+        </div>
+        
+        <div className="p-4 flex-1 overflow-y-auto max-h-[calc(100vh-600px)]">
           {cart.length === 0 ? (
             <p className={`${getTextSizeClass('base')} text-gray-500 text-center`}>{yourCartIsEmptyText}</p>
           ) : (
@@ -374,12 +407,32 @@ export default function KioskPage() {
         </div>
         
         <div className="p-4 border-t border-gray-200">
-          <div className="flex justify-between items-center mb-4">
-            <span className={`${getTextSizeClass('xl')} font-bold text-gray-800`}>{subtotalText}:</span>
-            <span className={`${getTextSizeClass('xl')} font-bold text-purple-600`}>${getSubtotal().toFixed(2)}</span>
+          <div className="space-y-2 mb-4">
+            <div className="flex justify-between items-center">
+              <span className="text-lg font-semibold text-gray-800">Subtotal:</span>
+              <span className="text-lg font-semibold text-gray-700">${getSubtotal().toFixed(2)}</span>
+            </div>
+            {discount > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-lg font-semibold text-green-600">Discount ({discount}%):</span>
+                <span className="text-lg font-semibold text-green-600">-${getDiscountAmount().toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center pt-2 border-t border-gray-300">
+              <span className="text-xl font-bold text-gray-800">Total:</span>
+              <span className="text-xl font-bold text-purple-600">${getTotal().toFixed(2)}</span>
+            </div>
           </div>
-          <button className={`${getTextSizeClass('base')} w-full bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 py-3 rounded-2xl font-bold hover:from-pink-300 hover:to-purple-400 transition-all shadow-lg`}>
-            {checkoutText}
+          <button 
+            onClick={handleCheckout}
+            disabled={cart.length === 0}
+            className={`w-full py-3 rounded-2xl font-bold transition-all shadow-lg ${
+              cart.length === 0
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 hover:from-pink-300 hover:to-purple-400'
+            }`}
+          >
+            Checkout
           </button>
         </div>
       </div>
