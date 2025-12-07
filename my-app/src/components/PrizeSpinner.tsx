@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useTextSize } from '@/contexts/TextSizeContext';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface PrizeSpinnerProps {
   onSpinComplete: (discount: number) => void;
@@ -12,6 +14,17 @@ export default function PrizeSpinner({ onSpinComplete, hasSpun, onReset }: Prize
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [selectedValue, setSelectedValue] = useState<number | null>(null);
+  
+  // Get text size class helper
+  const { getTextSizeClass } = useTextSize();
+  
+  // Translations
+  const prizeSpinnerText = useTranslation('🎰 Prize Spinner 🎰');
+  const youGotText = useTranslation('You got');
+  const offText = useTranslation('off!');
+  const spinningText = useTranslation('Spinning...');
+  const alreadySpunText = useTranslation('Already Spun - Checkout to Spin Again');
+  const spinButtonText = useTranslation('🎰 Spin! 🎰');
   
   // Spinner options with weighted distribution:
   // 0%: 4 times, 10%: 2 times, 20%: 2 times, 50%: 2 times, 100%: 1 time
@@ -118,7 +131,7 @@ export default function PrizeSpinner({ onSpinComplete, hasSpun, onReset }: Prize
 
   return (
     <div className="bg-white p-4 rounded-2xl shadow-lg border-2 border-purple-200">
-      <h3 className="text-lg font-bold text-gray-800 mb-3 text-center">🎰 Prize Spinner 🎰</h3>
+      <h3 className={`${getTextSizeClass('lg')} font-bold text-gray-800 mb-3 text-center`}>{prizeSpinnerText}</h3>
       
       <div className="relative w-48 h-48 mx-auto mb-4">
         {/* Spinner Wheel Container */}
@@ -161,7 +174,7 @@ export default function PrizeSpinner({ onSpinComplete, hasSpun, onReset }: Prize
                   }}
                 >
                   <div
-                    className="absolute text-white font-bold text-sm whitespace-nowrap drop-shadow-lg"
+                    className={`absolute text-white font-bold ${getTextSizeClass('sm')} whitespace-nowrap drop-shadow-lg`}
                     style={{
                       top: `${labelY}%`,
                       left: `${labelX}%`,
@@ -190,27 +203,27 @@ export default function PrizeSpinner({ onSpinComplete, hasSpun, onReset }: Prize
       </div>
       
       {selectedValue !== null && (
-        <div className={`text-center mb-3 p-2 rounded-lg font-bold ${
+        <div className={`text-center mb-3 p-2 rounded-lg font-bold ${getTextSizeClass('base')} ${
           selectedValue === 100 ? 'bg-yellow-100 text-yellow-800' :
           selectedValue === 50 ? 'bg-orange-100 text-orange-800' :
           selectedValue === 20 ? 'bg-pink-100 text-pink-800' :
           selectedValue === 10 ? 'bg-purple-100 text-purple-800' :
           'bg-gray-100 text-gray-800'
         }`}>
-          You got {selectedValue}% off!
+          {youGotText} {selectedValue}% {offText}
         </div>
       )}
       
       <button
         onClick={spin}
         disabled={isSpinning || hasSpun}
-        className={`w-full py-2 rounded-xl font-bold text-sm transition-all ${
+        className={`w-full py-2 rounded-xl font-bold ${getTextSizeClass('sm')} transition-all ${
           isSpinning || hasSpun
             ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
             : 'bg-gradient-to-r from-pink-500 to-purple-600 text-white hover:from-pink-600 hover:to-purple-700 shadow-lg hover:shadow-xl'
         }`}
       >
-        {isSpinning ? 'Spinning...' : hasSpun ? 'Already Spun - Checkout to Spin Again' : '🎰 Spin! 🎰'}
+        {isSpinning ? spinningText : hasSpun ? alreadySpunText : spinButtonText}
       </button>
     </div>
   );
