@@ -628,7 +628,7 @@ export default function KioskPage() {
           <button 
             onClick={handleCheckout}
             disabled={cart.length === 0 || isCheckingOut}
-            className={`w-full py-3 rounded-2xl font-bold transition-all shadow-lg ${
+            className={`w-full py-3 rounded-2xl font-bold transition-all shadow-lg mb-2 ${
               cart.length === 0 || isCheckingOut
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : paymentError
@@ -637,6 +637,13 @@ export default function KioskPage() {
             }`}
           >
             {isCheckingOut ? 'Processing...' : checkoutText}
+          </button>
+          
+          <button 
+            onClick={() => router.push('/login')}
+            className={`w-full py-3 rounded-2xl font-bold transition-all shadow-lg bg-gray-200 text-gray-700 hover:bg-gray-300 ${getTextSizeClass('base')}`}
+          >
+            {cancelText}
           </button>
         </div>
       </div>
