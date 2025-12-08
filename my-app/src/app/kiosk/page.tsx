@@ -227,10 +227,19 @@ export default function KioskPage() {
     return imageMap[category] || '/milktea.png'; // Default to milk tea image
   };
 
+  // Helper function to calculate size-based price addition
+  const getSizePrice = (size: 'small' | 'medium' | 'large'): number => {
+    if (size === 'medium') return 1.00;
+    if (size === 'large') return 2.00;
+    return 0; // small has no extra charge
+  };
+
   const calculateCurrentPrice = () => {
     if (!selectedItem) return 0;
-    return selectedItem.price + 
-      customization.selectedToppings.reduce((sum, topping) => sum + topping.price, 0);
+    const basePrice = selectedItem.price;
+    const sizePrice = getSizePrice(customization.size);
+    const toppingsPrice = customization.selectedToppings.reduce((sum, topping) => sum + topping.price, 0);
+    return basePrice + sizePrice + toppingsPrice;
   };
 
   const openCustomization = (item: MenuItem) => {
@@ -258,8 +267,11 @@ export default function KioskPage() {
   const addToCart = () => {
     if (!selectedItem) return;
 
-    const totalPrice = selectedItem.price + 
-      customization.selectedToppings.reduce((sum, topping) => sum + topping.price, 0);
+    const basePrice = selectedItem.price;
+    const sizePrice = getSizePrice(customization.size);
+    const toppingsPrice = customization.selectedToppings.reduce((sum, topping) => sum + topping.price, 0);
+    const itemPrice = basePrice + sizePrice + toppingsPrice;
+    const totalPrice = itemPrice * customization.quantity;
 
     const cartItem: CartItem = {
       id: `${selectedItem.id}-${Date.now()}-${Math.random()}`,
@@ -270,7 +282,7 @@ export default function KioskPage() {
       sugarLevel: customization.sugarLevel,
       toppings: customization.selectedToppings,
       quantity: customization.quantity,
-      totalPrice: totalPrice * customization.quantity
+      totalPrice: totalPrice
     };
 
     setCart(prev => [...prev, cartItem]);
@@ -302,6 +314,7 @@ export default function KioskPage() {
             ...item, 
             quantity: newQuantity,
             totalPrice: (item.menuItem.price + 
+              getSizePrice(item.size) +
               item.toppings.reduce((sum, topping) => sum + topping.price, 0)) * newQuantity
           }
         : item
@@ -647,19 +660,27 @@ export default function KioskPage() {
             <div className="mb-4">
               <h4 className={`${getTextSizeClass('base')} font-semibold text-gray-800 mb-2`}>{sizeText}</h4>
               <div className="flex gap-2">
-                {SIZE_OPTIONS.map((option, index) => (
-                  <button
-                    key={option}
-                    onClick={() => setCustomization(prev => ({ ...prev, size: option }))}
-                    className={`${getTextSizeClass('base')} px-4 py-2 rounded-xl font-medium transition-all ${
-                      customization.size === option
-                        ? 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 shadow-lg'
-                        : 'bg-gradient-to-r from-pink-50 to-purple-50 text-gray-700 hover:from-pink-100 hover:to-purple-100'
-                    }`}
-                  >
-                    {translatedSizeOptions[index] || (option === 'small' ? smallText : option === 'medium' ? mediumText : largeText)}
-                  </button>
-                ))}
+                {SIZE_OPTIONS.map((option, index) => {
+                  const sizeLabel = translatedSizeOptions[index] || (option === 'small' ? smallText : option === 'medium' ? mediumText : largeText);
+                  const priceAddition = getSizePrice(option);
+                  const displayText = priceAddition > 0 
+                    ? `${sizeLabel} +$${priceAddition.toFixed(2)}`
+                    : sizeLabel;
+                  
+                  return (
+                    <button
+                      key={option}
+                      onClick={() => setCustomization(prev => ({ ...prev, size: option }))}
+                      className={`${getTextSizeClass('base')} px-4 py-2 rounded-xl font-medium transition-all ${
+                        customization.size === option
+                          ? 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 shadow-lg'
+                          : 'bg-gradient-to-r from-pink-50 to-purple-50 text-gray-700 hover:from-pink-100 hover:to-purple-100'
+                      }`}
+                    >
+                      {displayText}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

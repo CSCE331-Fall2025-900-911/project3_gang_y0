@@ -213,7 +213,15 @@ export default function Cashier() {
     setOrderSubmitted(false);
   };
 
+  // Helper function to calculate size-based price addition
+  const getSizePrice = (size: 'small' | 'medium' | 'large'): number => {
+    if (size === 'medium') return 1.00;
+    if (size === 'large') return 2.00;
+    return 0; // small has no extra charge
+  };
+
   const calculateTotal = () => {
+    // Price already includes size pricing when added to cart
     return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   };
 
@@ -467,8 +475,8 @@ export default function Cashier() {
                 onChange={(e) => setSize(e.target.value as 'small' | 'medium' | 'large')}
               >
                 <option value="small">{smallText}</option>
-                <option value="medium">{mediumText}</option>
-                <option value="large">{largeText}</option>
+                <option value="medium">{mediumText} +$1.00</option>
+                <option value="large">{largeText} +$2.00</option>
               </select>
             </div>
 
@@ -517,16 +525,18 @@ export default function Cashier() {
                 {cancelText}
               </button>
               <button
-                onClick={() =>
+                onClick={() => {
+                  const sizePrice = getSizePrice(size);
                   addToCart({
                     ...customItem,
+                    price: customItem.price + sizePrice, // Add size price to base price
                     ice: iceLevel,
                     size: size,
                     sugar: sugarLevel,
                     toppings: selectedToppings,
                     quantity: 1,
-                  })
-                }
+                  });
+                }}
                 className="rounded bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
               >
                 {addToCartText}
