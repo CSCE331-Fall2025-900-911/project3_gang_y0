@@ -13,20 +13,22 @@ export default function NavigationBar() {
   const translations = {
     en: {
       menuBoard: 'Menu Board',
-      kiosk: 'Kiosk'
+      kiosk: 'Kiosk',
+      portal: 'Portal'
     },
     es: {
       menuBoard: 'Tablero de Menú',
-      kiosk: 'Kiosco'
+      kiosk: 'Kiosco',
+      portal: 'Portal'
     }
   };
 
   const t = translations[language];
 
   const navItems = [
+    { label: t.portal, path: '/portal' },
     { label: t.menuBoard, path: '/menu' },
     { label: t.kiosk, path: '/login' },
-  
   ];
 
   return (
