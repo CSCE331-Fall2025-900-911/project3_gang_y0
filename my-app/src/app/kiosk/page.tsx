@@ -7,6 +7,7 @@ import { filterSeasonalDrinks, type Season } from '@/lib/seasonalDrinks';
 import PrizeSpinner from '@/components/PrizeSpinner';
 import { useTranslation, useTranslations } from '@/hooks/useTranslation';
 import { useTextSize } from '@/contexts/TextSizeContext';
+import RewardsModal from '@/app/components/RewardsModal';
 
 interface MenuItem {
   id: number;
@@ -64,6 +65,10 @@ export default function KioskPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [orderNumber, setOrderNumber] = useState<number>(0);
   const [timeRemaining, setTimeRemaining] = useState(30); // 30 seconds timeout
+  const [showRewardsModal, setShowRewardsModal] = useState(false);
+  const [customerId, setCustomerId] = useState<number | null>(null);
+  const [customerName, setCustomerName] = useState<string | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Get text size class
   const { getTextSizeClass } = useTextSize();
@@ -151,6 +156,7 @@ export default function KioskPage() {
 
   useEffect(() => {
     fetchWeatherAndMenu();
+    checkCustomerSession();
   }, []);
 
   // Auto-dismiss toast after 5 seconds
@@ -174,6 +180,31 @@ export default function KioskPage() {
       router.push('/login');
     }
   }, [showConfirmation, timeRemaining, router]);
+
+  const checkCustomerSession = async () => {
+    try {
+      const response = await fetch('/api/auth/customer-check');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.customer) {
+          setCustomerId(data.customer.id);
+          setCustomerName(data.customer.name);
+        }
+      }
+    } catch (error) {
+      // Not logged in, that's fine
+    }
+  };
+
+  const getFirstName = (fullName: string | null): string => {
+    if (!fullName) return '';
+    return fullName.split(' ')[0];
+  };
+
+  const handleLoginSuccess = () => {
+    setShowLoginModal(false);
+    checkCustomerSession(); // Refresh customer info
+  };
 
   const fetchWeatherAndMenu = async () => {
     try {
@@ -333,19 +364,28 @@ export default function KioskPage() {
   };
 
   const getDiscountAmount = () => {
-    if (discount === 0 || cart.length === 0) return 0;
-    const mostExpensiveItem = getMostExpensiveItem();
-    if (!mostExpensiveItem) return 0;
-    return (mostExpensiveItem.totalPrice * discount) / 100;
+    // If discount is a percentage (from spinner), calculate percentage discount
+    if (discount > 0 && discount < 100 && cart.length > 0) {
+      const mostExpensiveItem = getMostExpensiveItem();
+      if (!mostExpensiveItem) return 0;
+      return (mostExpensiveItem.totalPrice * discount) / 100;
+    }
+    // If discount is a dollar amount (from rewards), use it directly
+    return discount;
   };
 
   const getTotal = () => {
-    return getSubtotal() - getDiscountAmount();
+    return Math.max(0, getSubtotal() - getDiscountAmount());
   };
 
   const handleSpinComplete = (discountPercent: number) => {
     setDiscount(discountPercent);
     setHasSpun(true);
+  };
+
+  const handleRedeemRewards = (points: number, discountAmount: number) => {
+    setDiscount(discountAmount);
+    setShowRewardsModal(false);
   };
 
   const handleCheckout = async () => {
@@ -357,13 +397,14 @@ export default function KioskPage() {
 
     if (isCheckingOut) return; // Prevent double submission
 
+    if (cart.length === 0) {
+      alert('Your cart is empty');
+      return;
+    }
+
     setIsCheckingOut(true);
 
     try {
-      // For now, kiosk orders are guest orders (customer_id = null)
-      // In the future, you could implement customer phone login on kiosk
-      const customerId = null;
-      
       // Calculate total after discount
       const total = getTotal();
 
@@ -376,14 +417,37 @@ export default function KioskPage() {
         body: JSON.stringify({
           cart,
           total,
-          customerId,
+          customerId: customerId || null,
           employeeId: null, // Kiosk orders have no employee
+          discount: getDiscountAmount()
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
+        // Add points if customer exists: $1 = 1 point (based on final total after discount)
+        if (customerId && total > 0) {
+          const pointsToAdd = Math.floor(total);
+          if (pointsToAdd > 0) {
+            try {
+              await fetch('/api/rewards', {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  customerId: customerId,
+                  pointsToAdd: pointsToAdd
+                }),
+              });
+            } catch (error) {
+              console.error('Error adding points:', error);
+              // Don't fail the order if points addition fails
+            }
+          }
+        }
+
         // Generate random 2-digit order number (10-99)
         const randomOrderNum = Math.floor(Math.random() * 90) + 10;
         setOrderNumber(randomOrderNum);
@@ -443,6 +507,21 @@ export default function KioskPage() {
 
       {/* Main Content - Menu Items */}
       <div className="flex-1 p-6">
+        {/* Customer Greeting / Login Section */}
+        <div className="mb-6 flex items-center justify-between">
+          {customerName ? (
+            <h2 className={`${getTextSizeClass('2xl')} font-bold text-gray-800`}>
+              Hi, {getFirstName(customerName)}!
+            </h2>
+          ) : (
+            <button
+              onClick={() => setShowLoginModal(true)}
+              className={`${getTextSizeClass('2xl')} font-bold text-gray-800 hover:text-purple-600 transition-colors cursor-pointer`}
+            >
+              Login for Rewards
+            </button>
+          )}
+        </div>
         <h2 className={`${getTextSizeClass('3xl')} font-bold text-gray-800 mb-6`}>
           {translatedCategories[categories.indexOf(selectedCategory)] || selectedCategory}
         </h2>
@@ -478,7 +557,17 @@ export default function KioskPage() {
       {/* Right Sidebar - Cart */}
       <div className="w-80 bg-white shadow-lg rounded-l-2xl flex flex-col">
         <div className="p-4 bg-gradient-to-r from-green-200 to-teal-300 text-gray-800 rounded-tl-2xl">
-          <h2 className={`${getTextSizeClass('xl')} font-bold`}>{yourOrderText}</h2>
+          <div className="flex justify-between items-center">
+            <h2 className={`${getTextSizeClass('xl')} font-bold`}>{yourOrderText}</h2>
+            {customerId && (
+              <button
+                onClick={() => setShowRewardsModal(true)}
+                className="px-3 py-1 bg-white bg-opacity-80 rounded-xl text-sm font-semibold hover:bg-opacity-100 transition-all"
+              >
+                Rewards
+              </button>
+            )}
+          </div>
         </div>
         
         {/* Prize Spinner */}
@@ -571,10 +660,10 @@ export default function KioskPage() {
               <span className={`${getTextSizeClass('lg')} font-semibold text-gray-800`}>{subtotalText}:</span>
               <span className={`${getTextSizeClass('lg')} font-semibold text-gray-700`}>${getSubtotal().toFixed(2)}</span>
             </div>
-            {discount > 0 && (
+            {getDiscountAmount() > 0 && (
               <div className="flex justify-between items-center">
                 <span className={`${getTextSizeClass('lg')} font-semibold text-green-600`}>
-                  {discountText} ({discount}% applied!):
+                  {discountText} {discount > 0 && discount < 100 ? `(${discount}% applied!)` : '(Rewards)'}:
                 </span>
                 <span className={`${getTextSizeClass('lg')} font-semibold text-green-600`}>-${getDiscountAmount().toFixed(2)}</span>
               </div>
@@ -912,6 +1001,114 @@ export default function KioskPage() {
           </div>
         </div>
       )}
+
+      {/* Rewards Modal */}
+      <RewardsModal
+        isOpen={showRewardsModal}
+        onClose={() => setShowRewardsModal(false)}
+        onRedeem={handleRedeemRewards}
+      />
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">Customer Login</h2>
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <KioskLoginForm onLoginSuccess={handleLoginSuccess} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Login Form Component for Kiosk
+function KioskLoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    setError('');
+    
+    if (!phoneNumber.trim()) {
+      setError('Please enter a phone number');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const response = await fetch('/api/auth/customer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phoneNumber }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Phone number not found');
+        setLoading(false);
+        return;
+      }
+
+      // Success
+      onLoginSuccess();
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('An error occurred. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block font-semibold text-gray-800 mb-2">
+          Phone Number
+        </label>
+        <input
+          type="tel"
+          value={phoneNumber}
+          onChange={(e) => {
+            setPhoneNumber(e.target.value);
+            setError('');
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleLogin();
+            }
+          }}
+          className={`w-full px-4 py-3 border ${
+            error ? 'border-red-500' : 'border-gray-300'
+          } rounded-2xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all`}
+          placeholder="Enter your phone number"
+          disabled={loading}
+        />
+        {error && (
+          <p className="mt-2 text-red-600 text-sm">{error}</p>
+        )}
+      </div>
+      
+      <button
+        onClick={handleLogin}
+        disabled={loading}
+        className="w-full px-4 py-3 bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 rounded-2xl font-bold hover:from-pink-300 hover:to-purple-400 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {loading ? 'Logging in...' : 'Login'}
+      </button>
     </div>
   );
 }

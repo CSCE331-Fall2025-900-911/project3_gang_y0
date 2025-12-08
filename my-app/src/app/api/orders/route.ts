@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   const client = await pool.connect();
 
   try {
-    const { items, total, paymentMethod } = await request.json();
+    const { items, total, paymentMethod, customerId, discount } = await request.json();
 
     // Validation
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -31,12 +31,11 @@ export async function POST(request: NextRequest) {
     console.log('Generated transaction ID:', transactionId);
 
     // --- Insert transaction ---
-    // Note: customer_id and employee_id will be NULL for now
-    // You may want to add these fields later when you implement user authentication
+    // Include customer_id if provided
     await client.query(
       `INSERT INTO transactions (id, amount, timestamp, customer_id, employee_id)
-       VALUES ($1, $2, NOW(), NULL, NULL)`,
-      [transactionId, total]
+       VALUES ($1, $2, NOW(), $3, NULL)`,
+      [transactionId, total, customerId || null]
     );
     console.log('Transaction inserted');
 
