@@ -325,9 +325,18 @@ export default function KioskPage() {
     return cart.reduce((sum, item) => sum + item.totalPrice, 0);
   };
 
+  const getMostExpensiveItem = () => {
+    if (cart.length === 0) return null;
+    return cart.reduce((max, item) => 
+      item.totalPrice > max.totalPrice ? item : max
+    );
+  };
+
   const getDiscountAmount = () => {
-    const subtotal = getSubtotal();
-    return (subtotal * discount) / 100;
+    if (discount === 0 || cart.length === 0) return 0;
+    const mostExpensiveItem = getMostExpensiveItem();
+    if (!mostExpensiveItem) return 0;
+    return (mostExpensiveItem.totalPrice * discount) / 100;
   };
 
   const getTotal = () => {
@@ -481,51 +490,78 @@ export default function KioskPage() {
           {cart.length === 0 ? (
             <p className={`${getTextSizeClass('base')} text-gray-500 text-center`}>{yourCartIsEmptyText}</p>
           ) : (
-            cart.map((cartItem) => (
-              <div key={cartItem.id} className="mb-4 p-4 border border-gray-200 rounded-2xl bg-gradient-to-r from-pink-50 to-purple-50">
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className={`${getTextSizeClass('base')} font-semibold text-gray-800`}>
-                    {menuItemTranslationMap[cartItem.menuItem.item] || cartItem.menuItem.item}
-                  </h4>
-                  <button
-                    onClick={() => removeFromCart(cartItem.id)}
-                    className={`${getTextSizeClass('lg')} text-red-500 hover:text-red-700 font-bold`}
-                  >
-                    ×
-                  </button>
-                </div>
-                
-                <p className={`${getTextSizeClass('sm')} text-gray-600`}>{hotColdText}: {cartItem.hotCold === 'hot' ? hotText : coldText}</p>
-                <p className={`${getTextSizeClass('sm')} text-gray-600`}>{sizeText}: {cartItem.size === 'small' ? smallText : cartItem.size === 'medium' ? mediumText : largeText}</p>
-                <p className={`${getTextSizeClass('sm')} text-gray-600`}>{iceText}: {cartItem.iceLevel}</p>
-                <p className={`${getTextSizeClass('sm')} text-gray-600`}>{sugarText}: {cartItem.sugarLevel}</p>
-                
-                {cartItem.toppings.length > 0 && (
-                  <p className={`${getTextSizeClass('sm')} text-gray-600`}>
-                    {toppingsText}: {cartItem.toppings.map(t => menuItemTranslationMap[t.item] || t.item).join(', ')}
-                  </p>
-                )}
-                
-                <div className="flex justify-between items-center mt-3">
-                  <div className="flex items-center">
+            cart.map((cartItem) => {
+              const mostExpensiveItem = getMostExpensiveItem();
+              const isDiscountedItem = discount > 0 && mostExpensiveItem && cartItem.id === mostExpensiveItem.id;
+              const itemDiscount = isDiscountedItem ? (cartItem.totalPrice * discount) / 100 : 0;
+              const itemPriceAfterDiscount = cartItem.totalPrice - itemDiscount;
+              
+              return (
+                <div key={cartItem.id} className={`mb-4 p-4 border rounded-2xl ${
+                  isDiscountedItem 
+                    ? 'border-green-400 bg-gradient-to-r from-green-50 to-emerald-50' 
+                    : 'border-gray-200 bg-gradient-to-r from-pink-50 to-purple-50'
+                }`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex-1">
+                      <h4 className={`${getTextSizeClass('base')} font-semibold text-gray-800`}>
+                        {menuItemTranslationMap[cartItem.menuItem.item] || cartItem.menuItem.item}
+                      </h4>
+                      {isDiscountedItem && (
+                        <p className={`${getTextSizeClass('xs')} text-green-600 font-semibold mt-1`}>
+                          🎉 {discount}% OFF applied!
+                        </p>
+                      )}
+                    </div>
                     <button
-                      onClick={() => updateQuantity(cartItem.id, cartItem.quantity - 1)}
-                      className="bg-white text-purple-600 px-3 py-1 rounded-l-lg border border-purple-200 hover:bg-purple-50"
+                      onClick={() => removeFromCart(cartItem.id)}
+                      className={`${getTextSizeClass('lg')} text-red-500 hover:text-red-700 font-bold`}
                     >
-                      -
-                    </button>
-                    <span className={`${getTextSizeClass('base')} bg-white text-gray-800 px-4 py-1 border-t border-b border-purple-200 font-semibold`}>{cartItem.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(cartItem.id, cartItem.quantity + 1)}
-                      className="bg-white text-purple-600 px-3 py-1 rounded-r-lg border border-purple-200 hover:bg-purple-50"
-                    >
-                      +
+                      ×
                     </button>
                   </div>
-                  <span className={`${getTextSizeClass('lg')} font-bold text-purple-600`}>${cartItem.totalPrice.toFixed(2)}</span>
+                  
+                  <p className={`${getTextSizeClass('sm')} text-gray-600`}>{hotColdText}: {cartItem.hotCold === 'hot' ? hotText : coldText}</p>
+                  <p className={`${getTextSizeClass('sm')} text-gray-600`}>{sizeText}: {cartItem.size === 'small' ? smallText : cartItem.size === 'medium' ? mediumText : largeText}</p>
+                  <p className={`${getTextSizeClass('sm')} text-gray-600`}>{iceText}: {cartItem.iceLevel}</p>
+                  <p className={`${getTextSizeClass('sm')} text-gray-600`}>{sugarText}: {cartItem.sugarLevel}</p>
+                  
+                  {cartItem.toppings.length > 0 && (
+                    <p className={`${getTextSizeClass('sm')} text-gray-600`}>
+                      {toppingsText}: {cartItem.toppings.map(t => menuItemTranslationMap[t.item] || t.item).join(', ')}
+                    </p>
+                  )}
+                  
+                  <div className="flex justify-between items-center mt-3">
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => updateQuantity(cartItem.id, cartItem.quantity - 1)}
+                        className="bg-white text-purple-600 px-3 py-1 rounded-l-lg border border-purple-200 hover:bg-purple-50"
+                      >
+                        -
+                      </button>
+                      <span className={`${getTextSizeClass('base')} bg-white text-gray-800 px-4 py-1 border-t border-b border-purple-200 font-semibold`}>{cartItem.quantity}</span>
+                      <button
+                        onClick={() => updateQuantity(cartItem.id, cartItem.quantity + 1)}
+                        className="bg-white text-purple-600 px-3 py-1 rounded-r-lg border border-purple-200 hover:bg-purple-50"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div className="text-right">
+                      {isDiscountedItem ? (
+                        <div>
+                          <span className={`${getTextSizeClass('sm')} text-gray-500 line-through mr-2`}>${cartItem.totalPrice.toFixed(2)}</span>
+                          <span className={`${getTextSizeClass('lg')} font-bold text-green-600`}>${itemPriceAfterDiscount.toFixed(2)}</span>
+                        </div>
+                      ) : (
+                        <span className={`${getTextSizeClass('lg')} font-bold text-purple-600`}>${cartItem.totalPrice.toFixed(2)}</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
         
@@ -537,7 +573,9 @@ export default function KioskPage() {
             </div>
             {discount > 0 && (
               <div className="flex justify-between items-center">
-                <span className={`${getTextSizeClass('lg')} font-semibold text-green-600`}>{discountText} ({discount}%):</span>
+                <span className={`${getTextSizeClass('lg')} font-semibold text-green-600`}>
+                  {discountText} ({discount}% applied!):
+                </span>
                 <span className={`${getTextSizeClass('lg')} font-semibold text-green-600`}>-${getDiscountAmount().toFixed(2)}</span>
               </div>
             )}
