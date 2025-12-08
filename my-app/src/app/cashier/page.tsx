@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useState, useEffect, useMemo } from 'react';
+import { useTranslation, useTranslations } from '@/hooks/useTranslation';
 import { useTextSize } from '@/contexts/TextSizeContext';
 import { filterSeasonalDrinks, type Season } from '@/lib/seasonalDrinks';
 
@@ -44,6 +44,16 @@ export default function Cashier() {
   const [sugarLevel, setSugarLevel] = useState<string>('');
   const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
   const allToppings = ['Boba', 'Pudding', 'Grass Jelly'];
+  
+  // Translate toppings
+  const translatedToppings = useTranslations(allToppings);
+  const toppingTranslationMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    allToppings.forEach((topping, index) => {
+      map[topping] = translatedToppings[index] || topping;
+    });
+    return map;
+  }, [allToppings, translatedToppings]);
 
   // Translations
   const cashierText = useTranslation('Cashier');
@@ -60,6 +70,38 @@ export default function Cashier() {
   const emptyCartText = useTranslation('Cart is empty');
   const addItemsText = useTranslation('Add items to start an order');
   const loadingText = useTranslation('Loading menu...');
+  const customizationText = useTranslation('Customization');
+  const hotColdText = useTranslation('Hot / Cold');
+  const hotText = useTranslation('Hot');
+  const coldText = useTranslation('Cold');
+  const sizeText = useTranslation('Size');
+  const smallText = useTranslation('Small');
+  const mediumText = useTranslation('Medium');
+  const largeText = useTranslation('Large');
+  const sugarLevelText = useTranslation('Sugar Level');
+  const toppingsText = useTranslation('Toppings');
+  const cancelText = useTranslation('Cancel');
+  const addToCartText = useTranslation('Add to Cart');
+  
+  // Translate ice, size, and sugar values
+  const hotValueText = useTranslation('hot');
+  const coldValueText = useTranslation('cold');
+  const smallValueText = useTranslation('small');
+  const mediumValueText = useTranslation('medium');
+  const largeValueText = useTranslation('large');
+  
+  // Helper function to translate cart item details
+  const translateCartItemDetail = (type: 'ice' | 'size' | 'sugar', value: string) => {
+    if (type === 'ice') {
+      return value === 'hot' ? hotValueText : coldValueText;
+    }
+    if (type === 'size') {
+      if (value === 'small') return smallValueText;
+      if (value === 'medium') return mediumValueText;
+      if (value === 'large') return largeValueText;
+    }
+    return value; // For sugar, return as is (it's already a percentage)
+  };
 
   // Fetch weather and menu items from database
   useEffect(() => {
@@ -104,6 +146,30 @@ export default function Cashier() {
 
   const categories = [...new Set(menuItems.map((item) => item.category))];
   const filteredItems = menuItems.filter((item) => item.category === selectedCategory);
+
+  // Translate categories
+  const translatedCategories = useTranslations(categories);
+  const categoryTranslationMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    categories.forEach((cat, index) => {
+      map[cat] = translatedCategories[index] || cat;
+    });
+    return map;
+  }, [categories, translatedCategories]);
+
+  // Translate menu items
+  const allMenuItemNames = useMemo(() => {
+    return menuItems.map(item => item.item || item.name);
+  }, [menuItems]);
+
+  const translatedMenuItemNames = useTranslations(allMenuItemNames);
+  const menuItemTranslationMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    allMenuItemNames.forEach((name, index) => {
+      map[name] = translatedMenuItemNames[index] || name;
+    });
+    return map;
+  }, [allMenuItemNames, translatedMenuItemNames]);
 
   const addToCart = (item: CartItem) => {
     setCart((prevCart) => {
@@ -211,7 +277,7 @@ export default function Cashier() {
                     : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
-                {category}
+                {categoryTranslationMap[category] || category}
               </button>
             ))}
           </div>
@@ -232,10 +298,10 @@ export default function Cashier() {
                 className="group rounded-lg border-2 border-gray-200 bg-white p-4 text-left transition-all hover:border-blue-500 hover:shadow-lg"
               >
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-800">{item.name}</h3>
+                  <h3 className="font-semibold text-gray-800">{menuItemTranslationMap[item.item || item.name] || item.name}</h3>
                   <span className="text-lg font-bold text-blue-600">${item.price.toFixed(2)}</span>
                 </div>
-                <div className="text-sm text-gray-500">{item.category}</div>
+                <div className="text-sm text-gray-500">{categoryTranslationMap[item.category] || item.category}</div>
               </button>
             ))}
           </div>
@@ -267,9 +333,12 @@ export default function Cashier() {
                       className="flex items-center justify-between rounded-lg bg-white p-3 shadow-sm"
                     >
                       <div className="flex-1">
-                        <div className="font-medium text-gray-800">{item.name}</div>
+                        <div className="font-medium text-gray-800">{menuItemTranslationMap[item.item || item.name] || item.name}</div>
                         <div className="text-sm text-gray-500">
-                          {item.ice}, {item.size}, {item.sugar}, {item.toppings?.join(', ')}
+                          {item.ice ? translateCartItemDetail('ice', item.ice) : ''}{item.ice && item.size ? ', ' : ''}
+                          {item.size ? translateCartItemDetail('size', item.size) : ''}{(item.ice || item.size) && item.sugar ? ', ' : ''}
+                          {item.sugar ? translateCartItemDetail('sugar', item.sugar) : ''}{(item.ice || item.size || item.sugar) && item.toppings && item.toppings.length > 0 ? ', ' : ''}
+                          {item.toppings?.map(topping => toppingTranslationMap[topping] || topping).join(', ')}
                           <br />
                           ${item.price.toFixed(2)} × {item.quantity}
                         </div>
@@ -374,38 +443,38 @@ export default function Cashier() {
       {showCustomization && customItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-1/3 rounded-lg bg-white p-6">
-            <h2 className="mb-4 text-xl font-bold text-gray-800">{customItem.name} Customization</h2>
+            <h2 className="mb-4 text-xl font-bold text-gray-800">{menuItemTranslationMap[customItem.item || customItem.name] || customItem.name} {customizationText}</h2>
 
             {/* Ice */}
             <div className="mb-4">
-              <label className="block mb-1">Hot / Cold</label>
+              <label className="block mb-1">{hotColdText}</label>
               <select
                 className="w-full rounded border p-2"
                 value={iceLevel}
                 onChange={(e) => setIceLevel(e.target.value as 'hot' | 'cold')}
               >
-                <option value="hot">Hot</option>
-                <option value="cold">Cold</option>
+                <option value="hot">{hotText}</option>
+                <option value="cold">{coldText}</option>
               </select>
             </div>
 
             {/* Size */}
             <div className="mb-4">
-              <label className="block mb-1">Size</label>
+              <label className="block mb-1">{sizeText}</label>
               <select
                 className="w-full rounded border p-2"
                 value={size}
                 onChange={(e) => setSize(e.target.value as 'small' | 'medium' | 'large')}
               >
-                <option value="small">Small</option>
-                <option value="medium">Medium</option>
-                <option value="large">Large</option>
+                <option value="small">{smallText}</option>
+                <option value="medium">{mediumText}</option>
+                <option value="large">{largeText}</option>
               </select>
             </div>
 
             {/* Sugar */}
             <div className="mb-4">
-              <label className="block mb-1">Sugar Level</label>
+              <label className="block mb-1">{sugarLevelText}</label>
               <select
                 className="w-full rounded border p-2"
                 value={sugarLevel}
@@ -422,7 +491,7 @@ export default function Cashier() {
 
             {/* Toppings */}
             <div className="mb-4">
-              <label className="block mb-1">Toppings</label>
+              <label className="block mb-1">{toppingsText}</label>
               <div className="flex flex-wrap gap-2">
                 {allToppings.map((topping) => (
                   <button
@@ -434,7 +503,7 @@ export default function Cashier() {
                         : 'border-gray-300 bg-white text-gray-700'
                     }`}
                   >
-                    {topping}
+                    {toppingTranslationMap[topping] || topping}
                   </button>
                 ))}
               </div>
@@ -445,7 +514,7 @@ export default function Cashier() {
                 onClick={() => setShowCustomization(false)}
                 className="rounded border px-4 py-2 text-gray-700 hover:bg-gray-100"
               >
-                Cancel
+                {cancelText}
               </button>
               <button
                 onClick={() =>
@@ -460,7 +529,7 @@ export default function Cashier() {
                 }
                 className="rounded bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
               >
-                Add to Cart
+                {addToCartText}
               </button>
             </div>
           </div>
