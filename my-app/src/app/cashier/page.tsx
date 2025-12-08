@@ -26,6 +26,13 @@ interface CartItem {
   toppings?: string[];
 }
 
+interface Customer {
+  id: number;
+  name: string;
+  phonenumber: string;
+  rewardspoints: number;
+}
+
 export default function Cashier() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -34,6 +41,10 @@ export default function Cashier() {
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentSeason, setCurrentSeason] = useState<Season>('fall/spring');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [discount, setDiscount] = useState(0);
+  const [loadingCustomer, setLoadingCustomer] = useState(false);
   const { getTextSizeClass } = useTextSize();
 
   // Customization states
@@ -211,6 +222,9 @@ export default function Cashier() {
     setCart([]);
     setPaymentMethod(null);
     setOrderSubmitted(false);
+    setDiscount(0);
+    setCustomer(null);
+    setCustomerPhone('');
   };
 
   // Helper function to calculate size-based price addition
@@ -220,9 +234,83 @@ export default function Cashier() {
     return 0; // small has no extra charge
   };
 
-  const calculateTotal = () => {
+  const calculateSubtotal = () => {
     // Price already includes size pricing when added to cart
     return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  };
+
+  const calculateTotal = () => {
+    return Math.max(0, calculateSubtotal() - discount);
+  };
+
+  const handleLookupCustomer = async () => {
+    if (!customerPhone.trim()) {
+      alert('Please enter a phone number');
+      return;
+    }
+
+    setLoadingCustomer(true);
+    try {
+      const response = await fetch(`/api/rewards/cashier?phoneNumber=${encodeURIComponent(customerPhone)}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setCustomer(data.customer);
+        setDiscount(0); // Reset discount when looking up new customer
+      } else {
+        alert(data.error || 'Customer not found');
+        setCustomer(null);
+      }
+    } catch (error) {
+      console.error('Error looking up customer:', error);
+      alert('Failed to look up customer');
+      setCustomer(null);
+    } finally {
+      setLoadingCustomer(false);
+    }
+  };
+
+  const handleRedeemPoints = async (points: number) => {
+    if (!customer) {
+      alert('Please look up a customer first');
+      return;
+    }
+
+    if (customer.rewardspoints < points) {
+      alert(`Insufficient points. Customer has ${customer.rewardspoints} points.`);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/rewards/cashier', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customerId: customer.id,
+          pointsToRedeem: points
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update customer points
+        setCustomer({
+          ...customer,
+          rewardspoints: data.remainingPoints
+        });
+        // Set discount
+        setDiscount(parseFloat(data.discountAmount));
+        alert(`Redeemed ${points} points for $${data.discountAmount} discount`);
+      } else {
+        alert(data.error || 'Failed to redeem points');
+      }
+    } catch (error) {
+      console.error('Error redeeming points:', error);
+      alert('Failed to redeem points');
+    }
   };
 
   const handleSubmitOrder = async () => {
@@ -231,14 +319,51 @@ export default function Cashier() {
       return;
     }
 
+    const total = calculateTotal();
+
     try {
       const response = await fetch('/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: cart, total: calculateTotal(), paymentMethod }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: cart,
+          total: total,
+          paymentMethod,
+          customerId: customer?.id || null,
+          discount: discount
+        }),
       });
       const data = await response.json();
       if (data.success) {
+        // Add points if customer exists: $1 = 1 point (based on final total)
+        if (customer && total > 0) {
+          const pointsToAdd = Math.floor(total);
+          if (pointsToAdd > 0) {
+            try {
+              await fetch('/api/rewards', {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  customerId: customer.id,
+                  pointsToAdd: pointsToAdd
+                }),
+              });
+              // Update customer points in UI
+              setCustomer({
+                ...customer,
+                rewardspoints: customer.rewardspoints + pointsToAdd
+              });
+            } catch (error) {
+              console.error('Error adding points:', error);
+              // Don't fail the order if points addition fails
+            }
+          }
+        }
+
         setOrderSubmitted(true);
         setTimeout(() => clearCart(), 2000);
       } else {
@@ -319,6 +444,76 @@ export default function Cashier() {
         <div className="w-1/3 border-l bg-gray-50 p-6">
           <h2 className="mb-4 text-2xl font-bold text-gray-800">{currentOrderText}</h2>
 
+          {/* Customer Lookup Section */}
+          <div className="mb-4 rounded-lg bg-white p-4 shadow-sm">
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              Customer Phone Number
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="tel"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleLookupCustomer();
+                  }
+                }}
+                placeholder="Enter phone number"
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+              />
+              <button
+                onClick={handleLookupCustomer}
+                disabled={loadingCustomer}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
+              >
+                {loadingCustomer ? '...' : 'Lookup'}
+              </button>
+            </div>
+
+            {customer && (
+              <div className="mt-3 rounded-lg bg-green-50 p-3">
+                <div className="text-sm font-semibold text-gray-800">{customer.name}</div>
+                <div className="text-xs text-gray-600">{customer.phonenumber}</div>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-sm text-gray-700">Rewards Points:</span>
+                  <span className="text-lg font-bold text-purple-600">{customer.rewardspoints}</span>
+                </div>
+                {customer.rewardspoints >= 10 && (
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      onClick={() => handleRedeemPoints(10)}
+                      className="flex-1 rounded bg-purple-100 px-2 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-200"
+                    >
+                      Redeem $1 (10 pts)
+                    </button>
+                    {customer.rewardspoints >= 20 && (
+                      <button
+                        onClick={() => handleRedeemPoints(20)}
+                        className="flex-1 rounded bg-purple-100 px-2 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-200"
+                      >
+                        Redeem $2 (20 pts)
+                      </button>
+                    )}
+                    {customer.rewardspoints >= 50 && (
+                      <button
+                        onClick={() => handleRedeemPoints(50)}
+                        className="flex-1 rounded bg-purple-100 px-2 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-200"
+                      >
+                        Redeem $5 (50 pts)
+                      </button>
+                    )}
+                  </div>
+                )}
+                {discount > 0 && (
+                  <div className="mt-2 text-sm font-semibold text-green-600">
+                    Discount Applied: -${discount.toFixed(2)}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {orderSubmitted ? (
             <div className="flex h-full flex-col items-center justify-center rounded-lg bg-green-50 p-8 text-center">
               <div className="mb-4 text-6xl">✓</div>
@@ -383,9 +578,21 @@ export default function Cashier() {
               {/* Total */}
               {cart.length > 0 && (
                 <div className="mb-4 rounded-lg bg-white p-4 shadow-sm">
-                  <div className="flex items-center justify-between text-2xl font-bold">
-                    <span>{totalText}:</span>
-                    <span className="text-blue-600">${calculateTotal().toFixed(2)}</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-lg">
+                      <span className="text-gray-700">Subtotal:</span>
+                      <span className="text-gray-800">${calculateSubtotal().toFixed(2)}</span>
+                    </div>
+                    {discount > 0 && (
+                      <div className="flex items-center justify-between text-lg text-green-600">
+                        <span>Discount:</span>
+                        <span>-${discount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between border-t border-gray-200 pt-2 text-2xl font-bold">
+                      <span>{totalText}:</span>
+                      <span className="text-blue-600">${calculateTotal().toFixed(2)}</span>
+                    </div>
                   </div>
                 </div>
               )}
