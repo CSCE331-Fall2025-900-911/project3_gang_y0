@@ -54,7 +54,7 @@ export default function EmployeesTab() {
       <div className="grid grid-cols-2 gap-6">
         {/* Table */}
         <div>
-          <table className="w-full text-left border border-gray-200 rounded">
+          <table className="w-full text-left border border-gray-200 rounded text-black">
             <thead className="bg-slate-50">
               <tr>
                 <th className="p-2">ID</th>

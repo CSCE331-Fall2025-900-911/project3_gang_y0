@@ -101,7 +101,7 @@ async function fetchInventory() {
     <div>
       <h2 className="text-xl font-semibold text-blue-800 mb-4">Menu Items</h2>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 gap-6 text-black">
         <div>
           <table className="w-full text-left border border-gray-200 rounded">
             <thead className="bg-slate-50">
@@ -114,7 +114,7 @@ async function fetchInventory() {
             </thead>
             <tbody>
               {menuItems.map(item => (
-                <tr key={item.id} className="border-t">
+                <tr key={item.id} className="border-t text-black">
                   <td className="p-2">{item.item}</td>
                   <td className="p-2">${item.price.toFixed(2)}</td>
                   <td className="p-2">{item.category}</td>
