@@ -17,8 +17,11 @@ interface CartItem {
   id: number;
   name: string;
   price: number;
+  category: string;
+  item?: string;
   quantity: number;
-  ice?: string;
+  ice?: 'hot' | 'cold';
+  size?: 'small' | 'medium' | 'large';
   sugar?: string;
   toppings?: string[];
 }
@@ -33,12 +36,14 @@ export default function Cashier() {
   const [currentSeason, setCurrentSeason] = useState<Season>('fall/spring');
   const { getTextSizeClass } = useTextSize();
 
-  // Customization Modal State
+  // Customization states
   const [showCustomization, setShowCustomization] = useState(false);
   const [customItem, setCustomItem] = useState<MenuItem | null>(null);
-  const [iceLevel, setIceLevel] = useState('Regular');
-  const [sugarLevel, setSugarLevel] = useState('Regular');
+  const [iceLevel, setIceLevel] = useState<'hot' | 'cold'>('cold');
+  const [size, setSize] = useState<'small' | 'medium' | 'large'>('medium');
+  const [sugarLevel, setSugarLevel] = useState<string>('');
   const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
+  const allToppings = ['Boba', 'Pudding', 'Grass Jelly'];
 
   // Translations
   const cashierText = useTranslation('Cashier');
@@ -55,14 +60,8 @@ export default function Cashier() {
   const emptyCartText = useTranslation('Cart is empty');
   const addItemsText = useTranslation('Add items to start an order');
   const loadingText = useTranslation('Loading menu...');
-  const customizeText = useTranslation('Customize Your Drink');
-  const iceText = useTranslation('Ice');
-  const sugarText = useTranslation('Sugar');
-  const toppingsText = useTranslation('Toppings');
-  const addToCartText = useTranslation('Add to Cart');
-  const cancelText = useTranslation('Cancel');
 
-  // Fetch weather and menu items
+  // Fetch weather and menu items from database
   useEffect(() => {
     const fetchWeatherAndMenuItems = async () => {
       try {
@@ -78,21 +77,20 @@ export default function Cashier() {
 
         const response = await fetch('/api/menu');
         const data = await response.json();
-
         if (data.items) {
           let items = data.items.map((item: any) => ({
             id: typeof item.id === 'string' ? parseInt(item.id) : item.id,
             name: item.item,
             price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
             category: item.category,
-            item: item.item
+            item: item.item,
           }));
 
           items = filterSeasonalDrinks(items, season);
           setMenuItems(items);
 
-          const categories = [...new Set(items.map((item: MenuItem) => item.category))] as string[];
-          if (categories.length > 0) setSelectedCategory(categories[0]);
+          const categories = [...new Set(items.map((item: MenuItem) => item.category))];
+          if (categories.length > 0) setSelectedCategory(categories[0] as string);
         }
       } catch (error) {
         console.error('Error fetching menu items:', error);
@@ -104,36 +102,42 @@ export default function Cashier() {
     fetchWeatherAndMenuItems();
   }, []);
 
-  const categories = [...new Set(menuItems.map(item => item.category))];
-  const filteredItems = menuItems.filter(item => item.category === selectedCategory);
+  const categories = [...new Set(menuItems.map((item) => item.category))];
+  const filteredItems = menuItems.filter((item) => item.category === selectedCategory);
 
-  // ----- Cart Functions -----
   const addToCart = (item: CartItem) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(cartItem =>
-        cartItem.id === item.id &&
-        cartItem.ice === item.ice &&
-        cartItem.sugar === item.sugar &&
-        JSON.stringify(cartItem.toppings || []) === JSON.stringify(item.toppings || [])
+    setCart((prevCart) => {
+      const existingItem = prevCart.find(
+        (cartItem) =>
+          cartItem.id === item.id &&
+          cartItem.ice === item.ice &&
+          cartItem.size === item.size &&
+          cartItem.sugar === item.sugar &&
+          JSON.stringify(cartItem.toppings) === JSON.stringify(item.toppings)
       );
       if (existingItem) {
-        return prevCart.map(cartItem =>
-          cartItem === existingItem ? { ...cartItem, quantity: cartItem.quantity + 1 } : cartItem
+        return prevCart.map((cartItem) =>
+          cartItem === existingItem
+            ? { ...cartItem, quantity: cartItem.quantity + 1 }
+            : cartItem
         );
       }
       return [...prevCart, { ...item, quantity: 1 }];
     });
+    setShowCustomization(false);
   };
 
   const removeFromCart = (itemId: number) => {
-    setCart(prevCart => {
-      const item = prevCart.find(cartItem => cartItem.id === itemId);
+    setCart((prevCart) => {
+      const item = prevCart.find((cartItem) => cartItem.id === itemId);
       if (item && item.quantity > 1) {
-        return prevCart.map(cartItem =>
-          cartItem.id === itemId ? { ...cartItem, quantity: cartItem.quantity - 1 } : cartItem
+        return prevCart.map((cartItem) =>
+          cartItem.id === itemId
+            ? { ...cartItem, quantity: cartItem.quantity - 1 }
+            : cartItem
         );
       }
-      return prevCart.filter(cartItem => cartItem.id !== itemId);
+      return prevCart.filter((cartItem) => cartItem.id !== itemId);
     });
   };
 
@@ -143,7 +147,9 @@ export default function Cashier() {
     setOrderSubmitted(false);
   };
 
-  const calculateTotal = () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const calculateTotal = () => {
+    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  };
 
   const handleSubmitOrder = async () => {
     if (cart.length === 0) {
@@ -155,13 +161,12 @@ export default function Cashier() {
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: cart, total: calculateTotal(), paymentMethod })
+        body: JSON.stringify({ items: cart, total: calculateTotal(), paymentMethod }),
       });
-
       const data = await response.json();
       if (data.success) {
         setOrderSubmitted(true);
-        setTimeout(clearCart, 2000);
+        setTimeout(() => clearCart(), 2000);
       } else {
         alert('Failed to submit order: ' + (data.error || 'Unknown error'));
       }
@@ -171,48 +176,32 @@ export default function Cashier() {
     }
   };
 
-  // ----- Customization Modal -----
-  const openCustomization = (item: MenuItem) => {
-    if (item.category.toLowerCase() === 'toppings') {
-      addToCart({ ...item, quantity: 1 });
-      return;
-    }
-    setCustomItem(item);
-    setIceLevel('Regular');
-    setSugarLevel('Regular');
-    setSelectedToppings([]);
-    setShowCustomization(true);
+  const toggleTopping = (topping: string) => {
+    setSelectedToppings((prev) =>
+      prev.includes(topping)
+        ? prev.filter((t) => t !== topping)
+        : [...prev, topping]
+    );
   };
 
-  const handleAddCustomToCart = () => {
-    if (customItem) {
-      addToCart({
-        ...customItem,
-        ice: iceLevel,
-        sugar: sugarLevel,
-        toppings: selectedToppings,
-        quantity: 1,
-      });
-      setShowCustomization(false);
-    }
-  };
-
-
-  // Toppings list (can be dynamic from menuItems)
-  const toppingsOptions = menuItems.filter(item => item.category.toLowerCase() === 'toppings').map(t => t.name);
-
-  if (loading) return <div className="flex min-h-screen items-center justify-center text-xl text-gray-600">{loadingText}</div>;
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-xl text-gray-600">{loadingText}</div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen bg-gray-50 ${getTextSizeClass('3xl')}`}>
       <div className="flex h-screen">
-        {/* Left Side - Menu */}
+        {/* Left Side - Menu Items */}
         <div className="w-2/3 overflow-y-auto bg-white p-6">
           <h1 className="mb-6 font-bold text-gray-800 text-center">{cashierText}</h1>
 
           {/* Category Tabs */}
           <div className="mb-6 flex gap-2 border-b">
-            {categories.map(category => (
+            {categories.map((category) => (
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
@@ -227,12 +216,19 @@ export default function Cashier() {
             ))}
           </div>
 
-          {/* Menu Grid */}
+          {/* Menu Items Grid */}
           <div className="grid grid-cols-3 gap-4">
-            {filteredItems.map(item => (
+            {filteredItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => openCustomization(item)}
+                onClick={() => {
+                  setCustomItem(item);
+                  setIceLevel('cold');
+                  setSize('medium');
+                  setSugarLevel('');
+                  setSelectedToppings([]);
+                  setShowCustomization(true);
+                }}
                 className="group rounded-lg border-2 border-gray-200 bg-white p-4 text-left transition-all hover:border-blue-500 hover:shadow-lg"
               >
                 <div className="mb-2 flex items-center justify-between">
@@ -245,7 +241,7 @@ export default function Cashier() {
           </div>
         </div>
 
-        {/* Right Side - Order */}
+        {/* Right Side - Order Summary */}
         <div className="w-1/3 border-l bg-gray-50 p-6">
           <h2 className="mb-4 text-2xl font-bold text-gray-800">{currentOrderText}</h2>
 
@@ -265,24 +261,42 @@ export default function Cashier() {
                     <p className="text-sm">{addItemsText}</p>
                   </div>
                 ) : (
-                  cart.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between rounded-lg bg-white p-3 shadow-sm">
+                  cart.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between rounded-lg bg-white p-3 shadow-sm"
+                    >
                       <div className="flex-1">
                         <div className="font-medium text-gray-800">{item.name}</div>
                         <div className="text-sm text-gray-500">
-                          ${item.price.toFixed(2)} × {item.quantity} {item.ice && `| Ice: ${item.ice}`} {item.sugar && `| Sugar: ${item.sugar}`} {item.toppings && item.toppings.length > 0 && `| Toppings: ${item.toppings.join(', ')}`}
+                          {item.ice}, {item.size}, {item.sugar}, {item.toppings?.join(', ')}
+                          <br />
+                          ${item.price.toFixed(2)} × {item.quantity}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => removeFromCart(item.id)}
                           className="rounded bg-red-100 px-2 py-1 text-red-600 hover:bg-red-200"
-                        >−</button>
+                        >
+                          −
+                        </button>
                         <span className="w-8 text-center font-semibold">{item.quantity}</span>
                         <button
-                          onClick={() => addToCart(item)}
+                          onClick={() =>
+                            addToCart({
+                              ...item,
+                              ice: item.ice,
+                              size: item.size,
+                              sugar: item.sugar,
+                              toppings: item.toppings,
+                              quantity: 1,
+                            })
+                          }
                           className="rounded bg-blue-100 px-2 py-1 text-blue-600 hover:bg-blue-200"
-                        >+</button>
+                        >
+                          +
+                        </button>
                       </div>
                     </div>
                   ))
@@ -299,19 +313,31 @@ export default function Cashier() {
                 </div>
               )}
 
-              {/* Payment Method */}
+              {/* Payment Method Selection */}
               {cart.length > 0 && (
                 <div className="mb-4">
                   <label className="mb-2 block text-sm font-medium text-gray-700">{paymentMethodText}</label>
                   <div className="grid grid-cols-3 gap-2">
                     <button
                       onClick={() => setPaymentMethod('cash')}
-                      className={`rounded-lg border-2 p-3 font-medium transition-all ${paymentMethod === 'cash' ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'}`}
-                    >{cashText}</button>
+                      className={`rounded-lg border-2 p-3 font-medium transition-all ${
+                        paymentMethod === 'cash'
+                          ? 'border-blue-600 bg-blue-50 text-blue-600'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      {cashText}
+                    </button>
                     <button
                       onClick={() => setPaymentMethod('card')}
-                      className={`rounded-lg border-2 p-3 font-medium transition-all ${paymentMethod === 'card' ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'}`}
-                    >{cardText}</button>
+                      className={`rounded-lg border-2 p-3 font-medium transition-all ${
+                        paymentMethod === 'card'
+                          ? 'border-blue-600 bg-blue-50 text-blue-600'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      {cardText}
+                    </button>
                   </div>
                   {!paymentMethod && <p className="mt-2 text-sm text-red-600">{selectPaymentMethodText}</p>}
                 </div>
@@ -323,14 +349,20 @@ export default function Cashier() {
                   <button
                     onClick={handleSubmitOrder}
                     disabled={!paymentMethod}
-                    className={`w-full rounded-lg px-4 py-3 font-semibold text-white transition-all ${paymentMethod ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed'}`}
-                  >{submitOrderText}</button>
+                    className={`w-full rounded-lg px-4 py-3 font-semibold text-white transition-all ${
+                      paymentMethod ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {submitOrderText}
+                  </button>
                 )}
                 {cart.length > 0 && (
                   <button
                     onClick={clearCart}
                     className="w-full rounded-lg border-2 border-red-500 bg-white px-4 py-3 font-semibold text-red-600 transition-all hover:bg-red-50"
-                  >{cancelOrderText}</button>
+                  >
+                    {cancelOrderText}
+                  </button>
                 )}
               </div>
             </>
@@ -341,60 +373,95 @@ export default function Cashier() {
       {/* Customization Modal */}
       {showCustomization && customItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-96 rounded-lg bg-white p-6 shadow-lg">
-            <h3 className="mb-4 text-xl font-bold text-gray-800">{customizeText}: {customItem.name}</h3>
+          <div className="w-1/3 rounded-lg bg-white p-6">
+            <h2 className="mb-4 text-xl font-bold text-gray-800">{customItem.name} Customization</h2>
 
             {/* Ice */}
             <div className="mb-4">
-              <label className="mb-2 block font-medium text-gray-700">{iceText}</label>
-              <select value={iceLevel} onChange={e => setIceLevel(e.target.value)} className="w-full rounded border-gray-300 p-2">
-                {['No Ice','Less','Regular','Extra'].map(level => <option key={level} value={level}>{level}</option>)}
+              <label className="block mb-1">Hot / Cold</label>
+              <select
+                className="w-full rounded border p-2"
+                value={iceLevel}
+                onChange={(e) => setIceLevel(e.target.value as 'hot' | 'cold')}
+              >
+                <option value="hot">Hot</option>
+                <option value="cold">Cold</option>
+              </select>
+            </div>
+
+            {/* Size */}
+            <div className="mb-4">
+              <label className="block mb-1">Size</label>
+              <select
+                className="w-full rounded border p-2"
+                value={size}
+                onChange={(e) => setSize(e.target.value as 'small' | 'medium' | 'large')}
+              >
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
               </select>
             </div>
 
             {/* Sugar */}
             <div className="mb-4">
-              <label className="mb-2 block font-medium text-gray-700">{sugarText}</label>
-              <select value={sugarLevel} onChange={e => setSugarLevel(e.target.value)} className="w-full rounded border-gray-300 p-2">
-                {['No Sugar','Less','Regular','Extra'].map(level => <option key={level} value={level}>{level}</option>)}
+              <label className="block mb-1">Sugar Level</label>
+              <select
+                className="w-full rounded border p-2"
+                value={sugarLevel}
+                onChange={(e) => setSugarLevel(e.target.value)}
+              >
+                <option value="0%">0%</option>
+                <option value="25%">25%</option>
+                <option value="50%">50%</option>
+                <option value="75%">75%</option>
+                <option value="100%">100%</option>
               </select>
             </div>
 
-            {/* Toppings */}
-            {toppingsOptions.length > 0 && (
-              <div className="mb-4">
-                <label className="mb-2 block font-medium text-gray-700">{toppingsText}</label>
-                <div className="flex flex-wrap gap-2">
-                  {toppingsOptions.map(topping => (
-                    <button
-                      key={topping}
-                      onClick={() =>
-                        selectedToppings.includes(topping)
-                          ? setSelectedToppings(selectedToppings.filter(t => t !== topping))
-                          : setSelectedToppings([...selectedToppings, topping])
-                      }
-                      className={`rounded-lg border px-3 py-1 text-sm transition-all ${
-                        selectedToppings.includes(topping)
-                          ? 'border-blue-600 bg-blue-50 text-blue-600'
-                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                      }`}
-                    >
-                      {topping}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={handleAddCustomToCart}
-                className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-              >{addToCartText}</button>
+            {/* Toppings */}
+            <div className="mb-4">
+              <label className="block mb-1">Toppings</label>
+              <div className="flex flex-wrap gap-2">
+                {allToppings.map((topping) => (
+                  <button
+                    key={topping}
+                    onClick={() => toggleTopping(topping)}
+                    className={`rounded border px-3 py-1 transition ${
+                      selectedToppings.includes(topping)
+                        ? 'border-blue-600 bg-blue-50 text-blue-600'
+                        : 'border-gray-300 bg-white text-gray-700'
+                    }`}
+                  >
+                    {topping}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowCustomization(false)}
-                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 hover:bg-gray-100"
-              >{cancelText}</button>
+                className="rounded border px-4 py-2 text-gray-700 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() =>
+                  addToCart({
+                    ...customItem,
+                    ice: iceLevel,
+                    size: size,
+                    sugar: sugarLevel,
+                    toppings: selectedToppings,
+                    quantity: 1,
+                  })
+                }
+                className="rounded bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
+              >
+                Add to Cart
+              </button>
             </div>
           </div>
         </div>
