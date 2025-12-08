@@ -7,6 +7,7 @@ import { filterSeasonalDrinks, type Season } from '@/lib/seasonalDrinks';
 import PrizeSpinner from '@/components/PrizeSpinner';
 import { useTranslation, useTranslations } from '@/hooks/useTranslation';
 import { useTextSize } from '@/contexts/TextSizeContext';
+import RewardsModal from '@/app/components/RewardsModal';
 
 interface MenuItem {
   id: number;
@@ -18,6 +19,8 @@ interface MenuItem {
 interface CartItem {
   id: string;
   menuItem: MenuItem;
+  hotCold: 'hot' | 'cold';
+  size: 'small' | 'medium' | 'large';
   iceLevel: string;
   sugarLevel: string;
   toppings: MenuItem[];
@@ -31,6 +34,8 @@ interface MenuData {
 
 const ICE_LEVELS = ['Light', 'Regular', 'Extra'];
 const SUGAR_LEVELS = ['25%', '50%', '75%', '100%'];
+const HOT_COLD_OPTIONS: ('hot' | 'cold')[] = ['hot', 'cold'];
+const SIZE_OPTIONS: ('small' | 'medium' | 'large')[] = ['small', 'medium', 'large'];
 
 export default function KioskPage() {
   const router = useRouter();
@@ -41,6 +46,8 @@ export default function KioskPage() {
   const [showCustomization, setShowCustomization] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [customization, setCustomization] = useState({
+    hotCold: 'cold' as 'hot' | 'cold',
+    size: 'medium' as 'small' | 'medium' | 'large',
     iceLevel: 'Regular',
     sugarLevel: '100%',
     selectedToppings: [] as MenuItem[],
@@ -58,6 +65,10 @@ export default function KioskPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [orderNumber, setOrderNumber] = useState<number>(0);
   const [timeRemaining, setTimeRemaining] = useState(30); // 30 seconds timeout
+  const [showRewardsModal, setShowRewardsModal] = useState(false);
+  const [customerId, setCustomerId] = useState<number | null>(null);
+  const [customerName, setCustomerName] = useState<string | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Get text size class
   const { getTextSizeClass } = useTextSize();
@@ -82,6 +93,13 @@ export default function KioskPage() {
   const iceLevelText = useTranslation('Ice Level');
   const sugarLevelText = useTranslation('Sugar Level');
   const addedToCartText = useTranslation('Added to cart');
+  const hotColdText = useTranslation('Hot / Cold');
+  const sizeText = useTranslation('Size');
+  const hotText = useTranslation('Hot');
+  const coldText = useTranslation('Cold');
+  const smallText = useTranslation('Small');
+  const mediumText = useTranslation('Medium');
+  const largeText = useTranslation('Large');
   const itemText = useTranslation('item');
   const itemsText = useTranslation('items');
   const paymentMethodText = useTranslation('Payment Method');
@@ -103,6 +121,12 @@ export default function KioskPage() {
   const sugarLevels = useMemo(() => SUGAR_LEVELS, []);
   const translatedIceLevels = useTranslations(iceLevels);
   const translatedSugarLevels = useTranslations(sugarLevels);
+  
+  // Translate hot/cold and size options
+  const hotColdOptions = useMemo(() => ['Hot', 'Cold'], []);
+  const sizeOptions = useMemo(() => ['Small', 'Medium', 'Large'], []);
+  const translatedHotColdOptions = useTranslations(hotColdOptions);
+  const translatedSizeOptions = useTranslations(sizeOptions);
 
   // Translate categories and menu items
   const categories = useMemo(() => {
@@ -132,6 +156,7 @@ export default function KioskPage() {
 
   useEffect(() => {
     fetchWeatherAndMenu();
+    checkCustomerSession();
   }, []);
 
   // Auto-dismiss toast after 5 seconds
@@ -155,6 +180,31 @@ export default function KioskPage() {
       router.push('/login');
     }
   }, [showConfirmation, timeRemaining, router]);
+
+  const checkCustomerSession = async () => {
+    try {
+      const response = await fetch('/api/auth/customer-check');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.customer) {
+          setCustomerId(data.customer.id);
+          setCustomerName(data.customer.name);
+        }
+      }
+    } catch (error) {
+      // Not logged in, that's fine
+    }
+  };
+
+  const getFirstName = (fullName: string | null): string => {
+    if (!fullName) return '';
+    return fullName.split(' ')[0];
+  };
+
+  const handleLoginSuccess = () => {
+    setShowLoginModal(false);
+    checkCustomerSession(); // Refresh customer info
+  };
 
   const fetchWeatherAndMenu = async () => {
     try {
@@ -208,15 +258,26 @@ export default function KioskPage() {
     return imageMap[category] || '/milktea.png'; // Default to milk tea image
   };
 
+  // Helper function to calculate size-based price addition
+  const getSizePrice = (size: 'small' | 'medium' | 'large'): number => {
+    if (size === 'medium') return 1.00;
+    if (size === 'large') return 2.00;
+    return 0; // small has no extra charge
+  };
+
   const calculateCurrentPrice = () => {
     if (!selectedItem) return 0;
-    return selectedItem.price + 
-      customization.selectedToppings.reduce((sum, topping) => sum + topping.price, 0);
+    const basePrice = selectedItem.price;
+    const sizePrice = getSizePrice(customization.size);
+    const toppingsPrice = customization.selectedToppings.reduce((sum, topping) => sum + topping.price, 0);
+    return basePrice + sizePrice + toppingsPrice;
   };
 
   const openCustomization = (item: MenuItem) => {
     setSelectedItem(item);
     setCustomization({
+      hotCold: 'cold',
+      size: 'medium',
       iceLevel: 'Regular',
       sugarLevel: '100%',
       selectedToppings: [],
@@ -237,17 +298,22 @@ export default function KioskPage() {
   const addToCart = () => {
     if (!selectedItem) return;
 
-    const totalPrice = selectedItem.price + 
-      customization.selectedToppings.reduce((sum, topping) => sum + topping.price, 0);
+    const basePrice = selectedItem.price;
+    const sizePrice = getSizePrice(customization.size);
+    const toppingsPrice = customization.selectedToppings.reduce((sum, topping) => sum + topping.price, 0);
+    const itemPrice = basePrice + sizePrice + toppingsPrice;
+    const totalPrice = itemPrice * customization.quantity;
 
     const cartItem: CartItem = {
       id: `${selectedItem.id}-${Date.now()}-${Math.random()}`,
       menuItem: selectedItem,
+      hotCold: customization.hotCold,
+      size: customization.size,
       iceLevel: customization.iceLevel,
       sugarLevel: customization.sugarLevel,
       toppings: customization.selectedToppings,
       quantity: customization.quantity,
-      totalPrice: totalPrice * customization.quantity
+      totalPrice: totalPrice
     };
 
     setCart(prev => [...prev, cartItem]);
@@ -279,6 +345,7 @@ export default function KioskPage() {
             ...item, 
             quantity: newQuantity,
             totalPrice: (item.menuItem.price + 
+              getSizePrice(item.size) +
               item.toppings.reduce((sum, topping) => sum + topping.price, 0)) * newQuantity
           }
         : item
@@ -289,18 +356,36 @@ export default function KioskPage() {
     return cart.reduce((sum, item) => sum + item.totalPrice, 0);
   };
 
+  const getMostExpensiveItem = () => {
+    if (cart.length === 0) return null;
+    return cart.reduce((max, item) => 
+      item.totalPrice > max.totalPrice ? item : max
+    );
+  };
+
   const getDiscountAmount = () => {
-    const subtotal = getSubtotal();
-    return (subtotal * discount) / 100;
+    // If discount is a percentage (from spinner), calculate percentage discount
+    if (discount > 0 && discount < 100 && cart.length > 0) {
+      const mostExpensiveItem = getMostExpensiveItem();
+      if (!mostExpensiveItem) return 0;
+      return (mostExpensiveItem.totalPrice * discount) / 100;
+    }
+    // If discount is a dollar amount (from rewards), use it directly
+    return discount;
   };
 
   const getTotal = () => {
-    return getSubtotal() - getDiscountAmount();
+    return Math.max(0, getSubtotal() - getDiscountAmount());
   };
 
   const handleSpinComplete = (discountPercent: number) => {
     setDiscount(discountPercent);
     setHasSpun(true);
+  };
+
+  const handleRedeemRewards = (points: number, discountAmount: number) => {
+    setDiscount(discountAmount);
+    setShowRewardsModal(false);
   };
 
   const handleCheckout = async () => {
@@ -312,13 +397,14 @@ export default function KioskPage() {
 
     if (isCheckingOut) return; // Prevent double submission
 
+    if (cart.length === 0) {
+      alert('Your cart is empty');
+      return;
+    }
+
     setIsCheckingOut(true);
 
     try {
-      // For now, kiosk orders are guest orders (customer_id = null)
-      // In the future, you could implement customer phone login on kiosk
-      const customerId = null;
-      
       // Calculate total after discount
       const total = getTotal();
 
@@ -331,14 +417,37 @@ export default function KioskPage() {
         body: JSON.stringify({
           cart,
           total,
-          customerId,
+          customerId: customerId || null,
           employeeId: null, // Kiosk orders have no employee
+          discount: getDiscountAmount()
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
+        // Add points if customer exists: $1 = 1 point (based on final total after discount)
+        if (customerId && total > 0) {
+          const pointsToAdd = Math.floor(total);
+          if (pointsToAdd > 0) {
+            try {
+              await fetch('/api/rewards', {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  customerId: customerId,
+                  pointsToAdd: pointsToAdd
+                }),
+              });
+            } catch (error) {
+              console.error('Error adding points:', error);
+              // Don't fail the order if points addition fails
+            }
+          }
+        }
+
         // Generate random 2-digit order number (10-99)
         const randomOrderNum = Math.floor(Math.random() * 90) + 10;
         setOrderNumber(randomOrderNum);
@@ -398,6 +507,21 @@ export default function KioskPage() {
 
       {/* Main Content - Menu Items */}
       <div className="flex-1 p-6">
+        {/* Customer Greeting / Login Section */}
+        <div className="mb-6 flex items-center justify-between">
+          {customerName ? (
+            <h2 className={`${getTextSizeClass('2xl')} font-bold text-gray-800`}>
+              Hi, {getFirstName(customerName)}!
+            </h2>
+          ) : (
+            <button
+              onClick={() => setShowLoginModal(true)}
+              className={`${getTextSizeClass('2xl')} font-bold text-gray-800 hover:text-purple-600 transition-colors cursor-pointer`}
+            >
+              Login for Rewards
+            </button>
+          )}
+        </div>
         <h2 className={`${getTextSizeClass('3xl')} font-bold text-gray-800 mb-6`}>
           {translatedCategories[categories.indexOf(selectedCategory)] || selectedCategory}
         </h2>
@@ -433,7 +557,17 @@ export default function KioskPage() {
       {/* Right Sidebar - Cart */}
       <div className="w-80 bg-white shadow-lg rounded-l-2xl flex flex-col">
         <div className="p-4 bg-gradient-to-r from-green-200 to-teal-300 text-gray-800 rounded-tl-2xl">
-          <h2 className={`${getTextSizeClass('xl')} font-bold`}>{yourOrderText}</h2>
+          <div className="flex justify-between items-center">
+            <h2 className={`${getTextSizeClass('xl')} font-bold`}>{yourOrderText}</h2>
+            {customerId && (
+              <button
+                onClick={() => setShowRewardsModal(true)}
+                className="px-3 py-1 bg-white bg-opacity-80 rounded-xl text-sm font-semibold hover:bg-opacity-100 transition-all"
+              >
+                Rewards
+              </button>
+            )}
+          </div>
         </div>
         
         {/* Prize Spinner */}
@@ -445,49 +579,78 @@ export default function KioskPage() {
           {cart.length === 0 ? (
             <p className={`${getTextSizeClass('base')} text-gray-500 text-center`}>{yourCartIsEmptyText}</p>
           ) : (
-            cart.map((cartItem) => (
-              <div key={cartItem.id} className="mb-4 p-4 border border-gray-200 rounded-2xl bg-gradient-to-r from-pink-50 to-purple-50">
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className={`${getTextSizeClass('base')} font-semibold text-gray-800`}>
-                    {menuItemTranslationMap[cartItem.menuItem.item] || cartItem.menuItem.item}
-                  </h4>
-                  <button
-                    onClick={() => removeFromCart(cartItem.id)}
-                    className={`${getTextSizeClass('lg')} text-red-500 hover:text-red-700 font-bold`}
-                  >
-                    ×
-                  </button>
-                </div>
-                
-                <p className={`${getTextSizeClass('sm')} text-gray-600`}>{iceText}: {cartItem.iceLevel}</p>
-                <p className={`${getTextSizeClass('sm')} text-gray-600`}>{sugarText}: {cartItem.sugarLevel}</p>
-                
-                {cartItem.toppings.length > 0 && (
-                  <p className={`${getTextSizeClass('sm')} text-gray-600`}>
-                    {toppingsText}: {cartItem.toppings.map(t => menuItemTranslationMap[t.item] || t.item).join(', ')}
-                  </p>
-                )}
-                
-                <div className="flex justify-between items-center mt-3">
-                  <div className="flex items-center">
+            cart.map((cartItem) => {
+              const mostExpensiveItem = getMostExpensiveItem();
+              const isDiscountedItem = discount > 0 && mostExpensiveItem && cartItem.id === mostExpensiveItem.id;
+              const itemDiscount = isDiscountedItem ? (cartItem.totalPrice * discount) / 100 : 0;
+              const itemPriceAfterDiscount = cartItem.totalPrice - itemDiscount;
+              
+              return (
+                <div key={cartItem.id} className={`mb-4 p-4 border rounded-2xl ${
+                  isDiscountedItem 
+                    ? 'border-green-400 bg-gradient-to-r from-green-50 to-emerald-50' 
+                    : 'border-gray-200 bg-gradient-to-r from-pink-50 to-purple-50'
+                }`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex-1">
+                      <h4 className={`${getTextSizeClass('base')} font-semibold text-gray-800`}>
+                        {menuItemTranslationMap[cartItem.menuItem.item] || cartItem.menuItem.item}
+                      </h4>
+                      {isDiscountedItem && (
+                        <p className={`${getTextSizeClass('xs')} text-green-600 font-semibold mt-1`}>
+                          🎉 {discount}% OFF applied!
+                        </p>
+                      )}
+                    </div>
                     <button
-                      onClick={() => updateQuantity(cartItem.id, cartItem.quantity - 1)}
-                      className="bg-white text-purple-600 px-3 py-1 rounded-l-lg border border-purple-200 hover:bg-purple-50"
+                      onClick={() => removeFromCart(cartItem.id)}
+                      className={`${getTextSizeClass('lg')} text-red-500 hover:text-red-700 font-bold`}
                     >
-                      -
-                    </button>
-                    <span className={`${getTextSizeClass('base')} bg-white text-gray-800 px-4 py-1 border-t border-b border-purple-200 font-semibold`}>{cartItem.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(cartItem.id, cartItem.quantity + 1)}
-                      className="bg-white text-purple-600 px-3 py-1 rounded-r-lg border border-purple-200 hover:bg-purple-50"
-                    >
-                      +
+                      ×
                     </button>
                   </div>
-                  <span className={`${getTextSizeClass('lg')} font-bold text-purple-600`}>${cartItem.totalPrice.toFixed(2)}</span>
+                  
+                  <p className={`${getTextSizeClass('sm')} text-gray-600`}>{hotColdText}: {cartItem.hotCold === 'hot' ? hotText : coldText}</p>
+                  <p className={`${getTextSizeClass('sm')} text-gray-600`}>{sizeText}: {cartItem.size === 'small' ? smallText : cartItem.size === 'medium' ? mediumText : largeText}</p>
+                  <p className={`${getTextSizeClass('sm')} text-gray-600`}>{iceText}: {cartItem.iceLevel}</p>
+                  <p className={`${getTextSizeClass('sm')} text-gray-600`}>{sugarText}: {cartItem.sugarLevel}</p>
+                  
+                  {cartItem.toppings.length > 0 && (
+                    <p className={`${getTextSizeClass('sm')} text-gray-600`}>
+                      {toppingsText}: {cartItem.toppings.map(t => menuItemTranslationMap[t.item] || t.item).join(', ')}
+                    </p>
+                  )}
+                  
+                  <div className="flex justify-between items-center mt-3">
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => updateQuantity(cartItem.id, cartItem.quantity - 1)}
+                        className="bg-white text-purple-600 px-3 py-1 rounded-l-lg border border-purple-200 hover:bg-purple-50"
+                      >
+                        -
+                      </button>
+                      <span className={`${getTextSizeClass('base')} bg-white text-gray-800 px-4 py-1 border-t border-b border-purple-200 font-semibold`}>{cartItem.quantity}</span>
+                      <button
+                        onClick={() => updateQuantity(cartItem.id, cartItem.quantity + 1)}
+                        className="bg-white text-purple-600 px-3 py-1 rounded-r-lg border border-purple-200 hover:bg-purple-50"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div className="text-right">
+                      {isDiscountedItem ? (
+                        <div>
+                          <span className={`${getTextSizeClass('sm')} text-gray-500 line-through mr-2`}>${cartItem.totalPrice.toFixed(2)}</span>
+                          <span className={`${getTextSizeClass('lg')} font-bold text-green-600`}>${itemPriceAfterDiscount.toFixed(2)}</span>
+                        </div>
+                      ) : (
+                        <span className={`${getTextSizeClass('lg')} font-bold text-purple-600`}>${cartItem.totalPrice.toFixed(2)}</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
         
@@ -497,9 +660,11 @@ export default function KioskPage() {
               <span className={`${getTextSizeClass('lg')} font-semibold text-gray-800`}>{subtotalText}:</span>
               <span className={`${getTextSizeClass('lg')} font-semibold text-gray-700`}>${getSubtotal().toFixed(2)}</span>
             </div>
-            {discount > 0 && (
+            {getDiscountAmount() > 0 && (
               <div className="flex justify-between items-center">
-                <span className={`${getTextSizeClass('lg')} font-semibold text-green-600`}>{discountText} ({discount}%):</span>
+                <span className={`${getTextSizeClass('lg')} font-semibold text-green-600`}>
+                  {discountText} {discount > 0 && discount < 100 ? `(${discount}% applied!)` : '(Rewards)'}:
+                </span>
                 <span className={`${getTextSizeClass('lg')} font-semibold text-green-600`}>-${getDiscountAmount().toFixed(2)}</span>
               </div>
             )}
@@ -552,7 +717,7 @@ export default function KioskPage() {
           <button 
             onClick={handleCheckout}
             disabled={cart.length === 0 || isCheckingOut}
-            className={`w-full py-3 rounded-2xl font-bold transition-all shadow-lg ${
+            className={`w-full py-3 rounded-2xl font-bold transition-all shadow-lg mb-2 ${
               cart.length === 0 || isCheckingOut
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : paymentError
@@ -561,6 +726,13 @@ export default function KioskPage() {
             }`}
           >
             {isCheckingOut ? 'Processing...' : checkoutText}
+          </button>
+          
+          <button 
+            onClick={() => router.push('/login')}
+            className={`w-full py-3 rounded-2xl font-bold transition-all shadow-lg bg-gray-200 text-gray-700 hover:bg-gray-300 ${getTextSizeClass('base')}`}
+          >
+            {cancelText}
           </button>
         </div>
       </div>
@@ -598,6 +770,54 @@ export default function KioskPage() {
               )}
             </div>
             
+            {/* Hot/Cold Selection */}
+            <div className="mb-4">
+              <h4 className={`${getTextSizeClass('base')} font-semibold text-gray-800 mb-2`}>{hotColdText}</h4>
+              <div className="flex gap-2">
+                {HOT_COLD_OPTIONS.map((option, index) => (
+                  <button
+                    key={option}
+                    onClick={() => setCustomization(prev => ({ ...prev, hotCold: option }))}
+                    className={`${getTextSizeClass('base')} px-4 py-2 rounded-xl font-medium transition-all ${
+                      customization.hotCold === option
+                        ? 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 shadow-lg'
+                        : 'bg-gradient-to-r from-pink-50 to-purple-50 text-gray-700 hover:from-pink-100 hover:to-purple-100'
+                    }`}
+                  >
+                    {translatedHotColdOptions[index] || (option === 'hot' ? hotText : coldText)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Size Selection */}
+            <div className="mb-4">
+              <h4 className={`${getTextSizeClass('base')} font-semibold text-gray-800 mb-2`}>{sizeText}</h4>
+              <div className="flex gap-2">
+                {SIZE_OPTIONS.map((option, index) => {
+                  const sizeLabel = translatedSizeOptions[index] || (option === 'small' ? smallText : option === 'medium' ? mediumText : largeText);
+                  const priceAddition = getSizePrice(option);
+                  const displayText = priceAddition > 0 
+                    ? `${sizeLabel} +$${priceAddition.toFixed(2)}`
+                    : sizeLabel;
+                  
+                  return (
+                    <button
+                      key={option}
+                      onClick={() => setCustomization(prev => ({ ...prev, size: option }))}
+                      className={`${getTextSizeClass('base')} px-4 py-2 rounded-xl font-medium transition-all ${
+                        customization.size === option
+                          ? 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 shadow-lg'
+                          : 'bg-gradient-to-r from-pink-50 to-purple-50 text-gray-700 hover:from-pink-100 hover:to-purple-100'
+                      }`}
+                    >
+                      {displayText}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Ice Level Selection */}
             <div className="mb-4">
               <h4 className={`${getTextSizeClass('base')} font-semibold text-gray-800 mb-2`}>{iceLevelText}</h4>
@@ -781,6 +1001,114 @@ export default function KioskPage() {
           </div>
         </div>
       )}
+
+      {/* Rewards Modal */}
+      <RewardsModal
+        isOpen={showRewardsModal}
+        onClose={() => setShowRewardsModal(false)}
+        onRedeem={handleRedeemRewards}
+      />
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">Customer Login</h2>
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <KioskLoginForm onLoginSuccess={handleLoginSuccess} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Login Form Component for Kiosk
+function KioskLoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    setError('');
+    
+    if (!phoneNumber.trim()) {
+      setError('Please enter a phone number');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const response = await fetch('/api/auth/customer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phoneNumber }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Phone number not found');
+        setLoading(false);
+        return;
+      }
+
+      // Success
+      onLoginSuccess();
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('An error occurred. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block font-semibold text-gray-800 mb-2">
+          Phone Number
+        </label>
+        <input
+          type="tel"
+          value={phoneNumber}
+          onChange={(e) => {
+            setPhoneNumber(e.target.value);
+            setError('');
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleLogin();
+            }
+          }}
+          className={`w-full px-4 py-3 border ${
+            error ? 'border-red-500' : 'border-gray-300'
+          } rounded-2xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all`}
+          placeholder="Enter your phone number"
+          disabled={loading}
+        />
+        {error && (
+          <p className="mt-2 text-red-600 text-sm">{error}</p>
+        )}
+      </div>
+      
+      <button
+        onClick={handleLogin}
+        disabled={loading}
+        className="w-full px-4 py-3 bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 rounded-2xl font-bold hover:from-pink-300 hover:to-purple-400 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {loading ? 'Logging in...' : 'Login'}
+      </button>
     </div>
   );
 }

@@ -23,22 +23,6 @@ export default function Login() {
   const loginWithGoogleText = useTranslation('Login with Google');
   const guestText = useTranslation('Continue as Guest');
 
-  const handleGoogleLogin = () => {
-    signIn("google", { callbackUrl: "/kiosk" });
-  };
-
-  const handleGuest = () => {
-    router.push('/kiosk');
-  };
-
-  const handleManager = () => {
-    router.push('/employee-login');
-  };
-
-  const handleCashier = () => {
-    router.push('/employee-login');
-  };
-
   const handlePhoneLogin = async () => {
     setError('');
     
@@ -73,6 +57,22 @@ export default function Login() {
       setError('An error occurred. Please try again.');
       setLoading(false);
     }
+  };
+
+  const handleGoogleLogin = () => {
+    signIn("google", { callbackUrl: "/kiosk" });
+  };
+
+  const handleGuest = async () => {
+    // Log out current session if exists
+    try {
+      await fetch('/api/auth/customer-logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      // Ignore errors, just proceed to kiosk
+    }
+    router.push('/kiosk');
   };
 
   return (
