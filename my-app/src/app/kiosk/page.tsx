@@ -18,6 +18,8 @@ interface MenuItem {
 interface CartItem {
   id: string;
   menuItem: MenuItem;
+  hotCold: 'hot' | 'cold';
+  size: 'small' | 'medium' | 'large';
   iceLevel: string;
   sugarLevel: string;
   toppings: MenuItem[];
@@ -31,6 +33,8 @@ interface MenuData {
 
 const ICE_LEVELS = ['Light', 'Regular', 'Extra'];
 const SUGAR_LEVELS = ['25%', '50%', '75%', '100%'];
+const HOT_COLD_OPTIONS: ('hot' | 'cold')[] = ['hot', 'cold'];
+const SIZE_OPTIONS: ('small' | 'medium' | 'large')[] = ['small', 'medium', 'large'];
 
 export default function KioskPage() {
   const router = useRouter();
@@ -41,6 +45,8 @@ export default function KioskPage() {
   const [showCustomization, setShowCustomization] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [customization, setCustomization] = useState({
+    hotCold: 'cold' as 'hot' | 'cold',
+    size: 'medium' as 'small' | 'medium' | 'large',
     iceLevel: 'Regular',
     sugarLevel: '100%',
     selectedToppings: [] as MenuItem[],
@@ -82,6 +88,13 @@ export default function KioskPage() {
   const iceLevelText = useTranslation('Ice Level');
   const sugarLevelText = useTranslation('Sugar Level');
   const addedToCartText = useTranslation('Added to cart');
+  const hotColdText = useTranslation('Hot / Cold');
+  const sizeText = useTranslation('Size');
+  const hotText = useTranslation('Hot');
+  const coldText = useTranslation('Cold');
+  const smallText = useTranslation('Small');
+  const mediumText = useTranslation('Medium');
+  const largeText = useTranslation('Large');
   const itemText = useTranslation('item');
   const itemsText = useTranslation('items');
   const paymentMethodText = useTranslation('Payment Method');
@@ -103,6 +116,12 @@ export default function KioskPage() {
   const sugarLevels = useMemo(() => SUGAR_LEVELS, []);
   const translatedIceLevels = useTranslations(iceLevels);
   const translatedSugarLevels = useTranslations(sugarLevels);
+  
+  // Translate hot/cold and size options
+  const hotColdOptions = useMemo(() => ['Hot', 'Cold'], []);
+  const sizeOptions = useMemo(() => ['Small', 'Medium', 'Large'], []);
+  const translatedHotColdOptions = useTranslations(hotColdOptions);
+  const translatedSizeOptions = useTranslations(sizeOptions);
 
   // Translate categories and menu items
   const categories = useMemo(() => {
@@ -217,6 +236,8 @@ export default function KioskPage() {
   const openCustomization = (item: MenuItem) => {
     setSelectedItem(item);
     setCustomization({
+      hotCold: 'cold',
+      size: 'medium',
       iceLevel: 'Regular',
       sugarLevel: '100%',
       selectedToppings: [],
@@ -243,6 +264,8 @@ export default function KioskPage() {
     const cartItem: CartItem = {
       id: `${selectedItem.id}-${Date.now()}-${Math.random()}`,
       menuItem: selectedItem,
+      hotCold: customization.hotCold,
+      size: customization.size,
       iceLevel: customization.iceLevel,
       sugarLevel: customization.sugarLevel,
       toppings: customization.selectedToppings,
@@ -459,6 +482,8 @@ export default function KioskPage() {
                   </button>
                 </div>
                 
+                <p className={`${getTextSizeClass('sm')} text-gray-600`}>{hotColdText}: {cartItem.hotCold === 'hot' ? hotText : coldText}</p>
+                <p className={`${getTextSizeClass('sm')} text-gray-600`}>{sizeText}: {cartItem.size === 'small' ? smallText : cartItem.size === 'medium' ? mediumText : largeText}</p>
                 <p className={`${getTextSizeClass('sm')} text-gray-600`}>{iceText}: {cartItem.iceLevel}</p>
                 <p className={`${getTextSizeClass('sm')} text-gray-600`}>{sugarText}: {cartItem.sugarLevel}</p>
                 
@@ -598,6 +623,46 @@ export default function KioskPage() {
               )}
             </div>
             
+            {/* Hot/Cold Selection */}
+            <div className="mb-4">
+              <h4 className={`${getTextSizeClass('base')} font-semibold text-gray-800 mb-2`}>{hotColdText}</h4>
+              <div className="flex gap-2">
+                {HOT_COLD_OPTIONS.map((option, index) => (
+                  <button
+                    key={option}
+                    onClick={() => setCustomization(prev => ({ ...prev, hotCold: option }))}
+                    className={`${getTextSizeClass('base')} px-4 py-2 rounded-xl font-medium transition-all ${
+                      customization.hotCold === option
+                        ? 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 shadow-lg'
+                        : 'bg-gradient-to-r from-pink-50 to-purple-50 text-gray-700 hover:from-pink-100 hover:to-purple-100'
+                    }`}
+                  >
+                    {translatedHotColdOptions[index] || (option === 'hot' ? hotText : coldText)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Size Selection */}
+            <div className="mb-4">
+              <h4 className={`${getTextSizeClass('base')} font-semibold text-gray-800 mb-2`}>{sizeText}</h4>
+              <div className="flex gap-2">
+                {SIZE_OPTIONS.map((option, index) => (
+                  <button
+                    key={option}
+                    onClick={() => setCustomization(prev => ({ ...prev, size: option }))}
+                    className={`${getTextSizeClass('base')} px-4 py-2 rounded-xl font-medium transition-all ${
+                      customization.size === option
+                        ? 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 shadow-lg'
+                        : 'bg-gradient-to-r from-pink-50 to-purple-50 text-gray-700 hover:from-pink-100 hover:to-purple-100'
+                    }`}
+                  >
+                    {translatedSizeOptions[index] || (option === 'small' ? smallText : option === 'medium' ? mediumText : largeText)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Ice Level Selection */}
             <div className="mb-4">
               <h4 className={`${getTextSizeClass('base')} font-semibold text-gray-800 mb-2`}>{iceLevelText}</h4>
