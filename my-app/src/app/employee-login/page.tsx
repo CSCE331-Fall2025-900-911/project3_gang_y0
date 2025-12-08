@@ -12,11 +12,14 @@ export default function EmployeeLogin() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hasChecked, setHasChecked] = useState(false);
 
   // Check if user is already authenticated via OAuth
   useEffect(() => {
     const checkEmployeeStatus = async () => {
-      if (status === 'authenticated' && session) {
+      // Only check once when authenticated and haven't checked yet
+      if (status === 'authenticated' && session && !hasChecked) {
+        setHasChecked(true);
         console.log('Authenticated session:', session);
         try {
           const response = await fetch('/api/auth/check-employee');
@@ -44,7 +47,7 @@ export default function EmployeeLogin() {
     };
 
     checkEmployeeStatus();
-  }, [session, status, router]);
+  }, [session, status, hasChecked, router]);
 
   const handleGoogleLogin = () => {
     signIn("google", { callbackUrl: "/employee-login" });
