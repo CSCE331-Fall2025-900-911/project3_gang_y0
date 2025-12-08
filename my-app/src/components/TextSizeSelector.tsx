@@ -11,8 +11,8 @@ export default function TextSizeSelector() {
         onClick={() => setTextSize('small')}
         className={`w-8 h-8 rounded-full font-bold transition-all text-xs flex items-center justify-center shadow-md ${
           textSize === 'small'
-            ? 'bg-blue-600 text-white ring-2 ring-blue-300'
-            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+            ? 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 ring-2 ring-purple-300'
+            : 'bg-white text-gray-700 hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50 border border-gray-300'
         }`}
         aria-label="Small text size"
       >
@@ -22,8 +22,8 @@ export default function TextSizeSelector() {
         onClick={() => setTextSize('medium')}
         className={`w-10 h-10 rounded-full font-bold transition-all text-base flex items-center justify-center shadow-md ${
           textSize === 'medium'
-            ? 'bg-blue-600 text-white ring-2 ring-blue-300'
-            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+            ? 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 ring-2 ring-purple-300'
+            : 'bg-white text-gray-700 hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50 border border-gray-300'
         }`}
         aria-label="Medium text size"
       >
@@ -33,8 +33,8 @@ export default function TextSizeSelector() {
         onClick={() => setTextSize('large')}
         className={`w-12 h-12 rounded-full font-bold transition-all text-lg flex items-center justify-center shadow-md ${
           textSize === 'large'
-            ? 'bg-blue-600 text-white ring-2 ring-blue-300'
-            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+            ? 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 ring-2 ring-purple-300'
+            : 'bg-white text-gray-700 hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50 border border-gray-300'
         }`}
         aria-label="Large text size"
       >

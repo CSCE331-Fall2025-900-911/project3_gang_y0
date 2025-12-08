@@ -2,15 +2,30 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useTextSize } from '@/contexts/TextSizeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function NavigationBar() {
   const router = useRouter();
   const pathname = usePathname();
   const { getTextSizeClass } = useTextSize();
+  const { language } = useLanguage();
+
+  const translations = {
+    en: {
+      menuBoard: 'Menu Board',
+      kiosk: 'Kiosk'
+    },
+    es: {
+      menuBoard: 'Tablero de Menú',
+      kiosk: 'Kiosco'
+    }
+  };
+
+  const t = translations[language];
 
   const navItems = [
-    { label: 'Menu Board', path: '/' },
-    { label: 'Kiosk', path: '/login' },
+    { label: t.menuBoard, path: '/menu' },
+    { label: t.kiosk, path: '/login' },
   
   ];
 

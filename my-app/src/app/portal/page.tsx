@@ -2,10 +2,55 @@
 
 import { useRouter } from 'next/navigation';
 import { useTextSize } from '@/contexts/TextSizeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function PortalPage() {
   const router = useRouter();
   const { getTextSizeClass } = useTextSize();
+  const { language } = useLanguage();
+
+  const translations = {
+    en: {
+      title: "Welcome to Rigby's Boba Shop",
+      cashier: {
+        title: "Cashier",
+        description: "Employee login for cashier access"
+      },
+      manager: {
+        title: "Manager",
+        description: "Employee login for manager access"
+      },
+      kiosk: {
+        title: "Kiosk",
+        description: "Self-service ordering kiosk"
+      },
+      menu: {
+        title: "Menu",
+        description: "View our menu and offerings"
+      }
+    },
+    es: {
+      title: "Bienvenido a la Tienda de Boba de Rigby",
+      cashier: {
+        title: "Cajero",
+        description: "Inicio de sesión de empleado para acceso de cajero"
+      },
+      manager: {
+        title: "Gerente",
+        description: "Inicio de sesión de empleado para acceso de gerente"
+      },
+      kiosk: {
+        title: "Kiosco",
+        description: "Kiosco de pedidos autoservicio"
+      },
+      menu: {
+        title: "Menú",
+        description: "Ver nuestro menú y ofertas"
+      }
+    }
+  };
+
+  const t = translations[language];
 
   const handleNavigation = (path: string) => {
     router.push(path);
@@ -15,7 +60,7 @@ export default function PortalPage() {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 flex items-center justify-center p-8">
       <div className="w-full max-w-4xl">
         <h1 className={`text-center font-bold text-gray-800 mb-12 ${getTextSizeClass('5xl')}`}>
-          Welcome to Rigby's Boba Shop
+          {t.title}
         </h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -31,10 +76,10 @@ export default function PortalPage() {
                 </svg>
               </div>
               <h2 className={`font-semibold text-gray-800 mb-2 ${getTextSizeClass('2xl')}`}>
-                Cashier
+                {t.cashier.title}
               </h2>
               <p className={`text-gray-600 ${getTextSizeClass('sm')}`}>
-                Employee login for cashier access
+                {t.cashier.description}
               </p>
             </div>
           </button>
@@ -51,10 +96,10 @@ export default function PortalPage() {
                 </svg>
               </div>
               <h2 className={`font-semibold text-gray-800 mb-2 ${getTextSizeClass('2xl')}`}>
-                Manager
+                {t.manager.title}
               </h2>
               <p className={`text-gray-600 ${getTextSizeClass('sm')}`}>
-                Employee login for manager access
+                {t.manager.description}
               </p>
             </div>
           </button>
@@ -71,17 +116,17 @@ export default function PortalPage() {
                 </svg>
               </div>
               <h2 className={`font-semibold text-gray-800 mb-2 ${getTextSizeClass('2xl')}`}>
-                Kiosk
+                {t.kiosk.title}
               </h2>
               <p className={`text-gray-600 ${getTextSizeClass('sm')}`}>
-                Self-service ordering kiosk
+                {t.kiosk.description}
               </p>
             </div>
           </button>
 
           {/* Menu Button */}
           <button
-            onClick={() => handleNavigation('/')}
+            onClick={() => handleNavigation('/menu')}
             className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-transparent hover:border-purple-300"
           >
             <div className="text-center">
@@ -91,10 +136,10 @@ export default function PortalPage() {
                 </svg>
               </div>
               <h2 className={`font-semibold text-gray-800 mb-2 ${getTextSizeClass('2xl')}`}>
-                Menu
+                {t.menu.title}
               </h2>
               <p className={`text-gray-600 ${getTextSizeClass('sm')}`}>
-                View our menu and offerings
+                {t.menu.description}
               </p>
             </div>
           </button>
