@@ -43,7 +43,7 @@ export default function Cashier() {
   const [size, setSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [sugarLevel, setSugarLevel] = useState<string>('');
   const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
-  const allToppings = ['Boba', 'Pudding', 'Grass Jelly'];
+  const allToppings = ['Crystal Boba','Grass Jelly', 'Mini Boba', 'Red Bean'];
   
   // Translate toppings
   const translatedToppings = useTranslations(allToppings);
