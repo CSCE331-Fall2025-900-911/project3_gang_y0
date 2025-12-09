@@ -316,7 +316,7 @@ export default function Login() {
                 <button
                   onClick={handleSignUp}
                   disabled={signUpLoading}
-                  className={`flex-1 px-4 py-3 bg-gradient-to-r from-blue-200 to-cyan-300 text-gray-800 rounded-2xl font-bold hover:from-blue-300 hover:to-cyan-400 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${getTextSizeClass('base')}`}
+                  className={`flex-1 px-4 py-3 bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 rounded-2xl font-bold hover:from-pink-300 hover:to-purple-400 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${getTextSizeClass('base')}`}
                 >
                   {signUpLoading ? 'Creating...' : createAccountText}
                 </button>
