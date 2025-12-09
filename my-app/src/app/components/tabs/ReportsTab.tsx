@@ -272,7 +272,7 @@ export default function ReportsTab() {
         renderChart()
       )}
 
-      <pre className="p-4 border border-gray-200 rounded max-h-[400px] overflow-auto bg-gray-50 mt-4">
+      <pre className="p-4 border border-gray-200 rounded max-h-[400px] text-black overflow-auto bg-gray-50 mt-4">
         {data ? JSON.stringify(data, null, 2) : ''}
       </pre>
     </div>

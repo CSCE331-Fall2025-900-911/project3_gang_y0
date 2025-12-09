@@ -21,7 +21,7 @@ export async function GET() {
     // Group by Chicago-local hour and return epoch-ms for the hour.
     const q = `
       SELECT
-        (EXTRACT(EPOCH FROM date_trunc('hour', t.timestamp AT TIME ZONE 'America/Chicago')) * 1000)::bigint AS hour_ms,
+        (EXTRACT(EPOCH FROM date_trunc('hour', t.timestamp AT TIME ZONE 'America/Chicago') + INTERVAL '1 day') * 1000)::bigint AS hour_ms,
         COUNT(DISTINCT t.id) AS orders_count,
         COALESCE(SUM(t.amount), 0)::numeric(12,2) AS gross_sales,
         COALESCE(COUNT(ti.*), 0) AS items_sold
