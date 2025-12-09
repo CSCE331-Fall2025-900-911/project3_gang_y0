@@ -128,7 +128,7 @@ export default function ReportsTab() {
         </div>
       )}
 
-      <pre className="p-4 border border-gray-200 rounded max-h-[400px] overflow-auto bg-gray-50">
+      <pre className="p-4 border border-gray-200 text-black rounded max-h-[400px] overflow-auto bg-gray-50">
         {JSON.stringify(data, null, 2)}
       </pre>
     </div>

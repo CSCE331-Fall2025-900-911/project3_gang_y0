@@ -469,7 +469,7 @@ export default function Cashier() {
                   }
                 }}
                 placeholder="Enter phone number"
-                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                className="flex-1 rounded-lg border text-gray-700 border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
               />
               <button
                 onClick={handleLookupCustomer}
