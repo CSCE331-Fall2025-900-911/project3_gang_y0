@@ -88,7 +88,7 @@ export default function EmployeesTab() {
           <label className="block mb-2">
             <div className="text-sm text-gray-700">Name</div>
             <input
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded text-gray-700"
               value={form.name}
               onChange={e => setForm({ ...form, name: e.target.value })}
             />
@@ -97,14 +97,14 @@ export default function EmployeesTab() {
           <label className="block mb-2">
             <div className="text-sm text-gray-700">Email</div>
             <input
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded text-gray-700"
               value={form.email}
               onChange={e => setForm({ ...form, email: e.target.value })}
             />
           </label>
 
           <label className="block mb-4">
-            <div className="text-sm text-gray-700">Position</div>
+            <div className="text-sm text-gray-700 text-gray-700">Position</div>
             <select
               className="w-full p-2 border rounded"
               value={form.position.charAt(0).toUpperCase() + form.position.slice(1)}
