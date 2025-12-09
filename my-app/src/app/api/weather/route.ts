@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     // Get location from query parameter
     const searchParams = request.nextUrl.searchParams;
-    const location = searchParams.get('q') || 'auto:ip';
+    const location = searchParams.get('q') || '77840';
 
     // Call WeatherAPI current weather endpoint
     const response = await fetch(
