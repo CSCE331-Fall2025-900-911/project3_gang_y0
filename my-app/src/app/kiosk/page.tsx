@@ -55,6 +55,7 @@ export default function KioskPage() {
   });
   const [loading, setLoading] = useState(true);
   const [currentSeason, setCurrentSeason] = useState<Season>('fall/spring');
+  const [temperature, setTemperature] = useState<number | null>(null);
   const [discount, setDiscount] = useState(0);
   const [hasSpun, setHasSpun] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -144,6 +145,7 @@ export default function KioskPage() {
   }, [menuData]);
 
   const translatedMenuItemNames = useTranslations(allMenuItemNames);
+  
 
   // Create a mapping for menu item translations
   const menuItemTranslationMap = useMemo(() => {
@@ -216,6 +218,9 @@ export default function KioskPage() {
         if (weatherData.success && weatherData.season) {
           season = weatherData.season as Season;
           setCurrentSeason(season);
+        }
+        if (weatherData.temperature !== undefined) {
+          setTemperature(weatherData.temperature);
         }
       }
 
@@ -998,9 +1003,30 @@ export default function KioskPage() {
             >
               {returnNowText}
             </button>
+            {/* Temperature Display - Bottom Left */}
+            {temperature !== null && (
+              <div className="fixed bottom-4 left-4 bg-white/80 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg text-gray-800">
+                <span className={`${getTextSizeClass('base')} font-semibold`}>
+                  🌡️ {temperature}°F
+                </span>
+              </div>
+            )}
+
           </div>
         </div>
+        
       )}
+      {/* Bottom-left Weather Display */}
+{temperature !== null && (
+  <div className="fixed bottom-4 left-4 bg-white bg-opacity-80 backdrop-blur-md px-4 py-3 rounded-2xl shadow-lg border border-gray-200 flex flex-col">
+    <span className="text-gray-700 font-semibold text-lg">
+      🌡️ {temperature}°F
+    </span>
+    <span className="text-gray-500 text-sm capitalize">
+      Season: {currentSeason}
+    </span>
+  </div>
+)}
 
       {/* Rewards Modal */}
       <RewardsModal
