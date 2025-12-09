@@ -4,15 +4,33 @@ import { pool } from '@/lib/db';
 
 function chicagoDayBoundsUTC() {
   const tz = 'America/Chicago';
-  // get YYYY-MM-DD for Chicago today
-  const chicagoDateStr = new Date().toLocaleString('en-CA', { timeZone: tz }).slice(0, 10);
-  const localMidnightStr = `${chicagoDateStr}T00:00:00`;
-  // create a Date representing that local midnight in Chicago, then convert to UTC ISO strings
-  const dInChicago = new Date(new Date(localMidnightStr).toLocaleString('en-US', { timeZone: tz }));
-  const startUtc = new Date(dInChicago.getTime() - dInChicago.getTimezoneOffset() * 60000).toISOString();
-  const endUtc = new Date(dInChicago.getTime() + 24 * 60 * 60 * 1000 - dInChicago.getTimezoneOffset() * 60000).toISOString();
-  return { startUtc, endUtc };
+
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date());
+
+  const get = (t: string) => {
+    const p = parts.find(x => x.type === t);
+    if (!p) throw new Error(`Missing part ${t}`);
+    return p.value;
+  };
+
+  const y = get('year');
+  const m = get('month');
+  const d = get('day');
+
+  const startLocal = new Date(`${y}-${m}-${d}T00:00:00-06:00`);
+  const endLocal = new Date(startLocal.getTime() + 24 * 3600 * 1000);
+
+  return {
+    startUtc: startLocal.toISOString(),
+    endUtc: endLocal.toISOString()
+  };
 }
+
 
 export async function GET() {
   try {

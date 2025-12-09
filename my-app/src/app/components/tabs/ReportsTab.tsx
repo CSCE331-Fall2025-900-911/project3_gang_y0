@@ -30,6 +30,8 @@ export default function ReportsTab() {
   const [from, setFrom] = useState<string>(localISODate);
   const [to, setTo] = useState<string>(localISODate);
 
+  const [zStarted, setZStarted] = useState(false);
+
   useEffect(() => {
     // Z report does NOT auto-fetch
     if (active === 'z') return;
@@ -84,6 +86,7 @@ export default function ReportsTab() {
 
   async function runZReport() {
     setLoading(true);
+    setZStarted(true);
     try {
       const res = await fetch('/api/reports/z', { method: 'POST' });
       const json = await res.json();
@@ -217,6 +220,7 @@ export default function ReportsTab() {
             key={t.id}
             onClick={() => {
               setActive(t.id);
+              if (t.id === 'z') setData(null);
             }}
             className={`px-3 py-2 rounded-t-lg font-medium ${
               active === t.id ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-blue-800 border border-gray-200'
@@ -254,27 +258,44 @@ export default function ReportsTab() {
         </div>
       )}
 
-      {active === 'z' && (
-        <div className="mb-4">
-          <button onClick={runZReport} className="px-4 py-2 bg-red-600 text-white rounded shadow">
+      {active === "z" && (
+        <>
+          <button
+            onClick={runZReport}
+            className="px-4 py-2 bg-red-600 text-white rounded"
+          >
             Run Z-Report
           </button>
-        </div>
+
+          {!zStarted && (
+            <div className="mt-4 text-sm text-gray-600">
+              You can only run a Z Report once per day so make sure you are ready before continuing.
+            </div>
+          )}
+
+          {data && (
+            <pre className="mt-4 p-4 bg-gray-100 rounded">
+              {JSON.stringify(data, null, 2)}
+            </pre>
+          )}
+        </>
       )}
+
+
 
       {loading ? (
         <div className="p-4 text-gray-600">Loading...</div>
-      ) : data === null ? (
-        <div className="p-4 text-gray-600">Waiting...</div>
       ) : data?.message ? (
         <div className="p-4 text-gray-600">{data.message}</div>
       ) : (
         renderChart()
       )}
 
-      <pre className="p-4 border border-gray-200 rounded max-h-[400px] text-black overflow-auto bg-gray-50 mt-4">
-        {data ? JSON.stringify(data, null, 2) : ''}
-      </pre>
+      {active !== "z" && (
+        <pre className="p-4 border border-gray-200 rounded max-h-[400px] text-black overflow-auto bg-gray-50 mt-4">
+          {data ? JSON.stringify(data, null, 2) : ""}
+        </pre>
+      )}
     </div>
   );
 }
