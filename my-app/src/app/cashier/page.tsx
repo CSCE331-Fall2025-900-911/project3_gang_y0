@@ -155,8 +155,17 @@ export default function Cashier() {
     fetchWeatherAndMenuItems();
   }, []);
 
-  const categories = [...new Set(menuItems.map((item) => item.category))];
-  const filteredItems = menuItems.filter((item) => item.category === selectedCategory);
+  const categories = [...new Set(menuItems
+    .map((item) => item.category)
+    .filter((cat) => cat.toLowerCase() !== "topping")
+  )];
+
+  const filteredItems = menuItems.filter(
+    (item) => 
+      item.category === selectedCategory &&
+      item.category.toLowerCase() !== "topping"
+  );
+
 
   // Translate categories
   const translatedCategories = useTranslations(categories);
@@ -656,9 +665,9 @@ export default function Cashier() {
 
       {/* Customization Modal */}
       {showCustomization && customItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 text-black">
           <div className="w-1/3 rounded-lg bg-white p-6">
-            <h2 className="mb-4 text-xl font-bold text-gray-800">{menuItemTranslationMap[customItem.item || customItem.name] || customItem.name} {customizationText}</h2>
+            <h2 className="mb-4 text-xl font-bold">{menuItemTranslationMap[customItem.item || customItem.name] || customItem.name} {customizationText}</h2>
 
             {/* Ice */}
             <div className="mb-4">
