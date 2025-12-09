@@ -21,7 +21,7 @@ export async function POST() {
     // Summary for the Chicago local date
     const summaryQuery = `
       SELECT
-        (date_trunc('day', t.timestamp AT TIME ZONE 'America/Chicago') + INTERVAL '1 day')::date AS day,
+        (date_trunc('day', t.timestamp AT TIME ZONE 'America/Chicago') + INTERVAL '4 hour')::date AS day,
         COUNT(DISTINCT t.id) AS total_orders,
         COALESCE(SUM(t.amount), 0)::numeric(12,2) AS gross_sales,
         COALESCE(AVG(t.amount), 0)::numeric(12,2) AS avg_order_amount,
