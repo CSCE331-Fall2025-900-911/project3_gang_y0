@@ -134,30 +134,85 @@ export default function ReportsTab() {
 
 
     if (active === 'x') {
-      if (!Array.isArray(data) || data.length === 0) {
-        return <div className="p-4 text-gray-600">No hourly data for X-Report</div>;
-      }
+  if (!Array.isArray(data) || data.length === 0) {
+    return <div className="p-4 text-gray-600">No hourly data for X-Report</div>;
+  }
 
-      const chartData = data.map((row: any) => ({
-        hour: formatHourLabel(row.hour_ms) ?? '',
-        sales: Number(row.sales ?? 0),
-        orders: Number(row.orders_count ?? 0),
-        items: Number(row.items_sold ?? 0),
-      }));
+  // map -> ensure numbers, filter invalid rows, sort
+  const chartData = data
+    .map((row: any) => ({
+      hour_ms: Number(row.hour_ms ?? NaN),
+      sales: Number(row.sales ?? NaN),
+    }))
+    .filter((r: any) => Number.isFinite(r.hour_ms) && Number.isFinite(r.sales))
+    .sort((a: any, b: any) => a.hour_ms - b.hour_ms);
 
-      return (
-        <ResponsiveContainer width="100%" height={320}>
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="hour" />
-            <YAxis />
-            <Tooltip />
-            {/* we use `sales` (guaranteed number) as the dataKey to avoid NaN */}
-            <Line type="monotone" dataKey="sales" stroke="var(--chart-color)" strokeWidth={2} />
-          </LineChart>
-        </ResponsiveContainer>
-      );
-    }
+  // debug log
+  console.log('x-report display data:', JSON.stringify(chartData, null, 2));
+
+  // single-point: duplicate 1 hour later so Recharts draws a horizontal line
+  const displayData =
+    chartData.length === 1
+      ? [
+          chartData[0],
+          { hour_ms: chartData[0].hour_ms + 60 * 60 * 1000, sales: chartData[0].sales },
+        ]
+      : chartData;
+
+  // If after filtering there's no data, show message
+  if (displayData.length === 0) {
+    return <div className="p-4 text-gray-600">No valid hourly data for X-Report</div>;
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height={320}>
+      <LineChart
+        data={displayData}
+        margin={{ top: 12, right: 24, left: 12, bottom: 6 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+
+        <XAxis
+          dataKey="hour_ms"
+          type="number"
+          scale="time"
+          domain={['dataMin', 'dataMax']}
+          tickFormatter={(ms: number) => formatHourLabel(ms) || ''}
+          tick={{ fontSize: 12 }}
+          padding={{ left: 12, right: 12 }}
+        />
+
+        <YAxis />
+
+        <Tooltip
+          isAnimationActive={false}
+          labelFormatter={(ms: number) =>
+            new Date(ms).toLocaleString('en-US', {
+              timeZone: 'America/Chicago',
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true,
+            })
+          }
+          formatter={(value: any) => `$${Number(value).toFixed(2)}`}
+        />
+
+        <Line
+          type="monotone"
+          dataKey="sales"
+          stroke="#705167ff"               // explicit color while debugging
+          strokeWidth={3}
+          dot={{ r: 1 }}
+          activeDot={{ r: 6 }}
+          isAnimationActive={false}      // disable animation (debugging)
+          connectNulls={true}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+
 
     if (active === 'z') {
       // z report returns an object with summary & deletion counts
