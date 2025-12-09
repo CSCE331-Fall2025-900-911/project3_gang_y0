@@ -735,19 +735,22 @@ export default function Cashier() {
 
             <div className="flex justify-end gap-2">
               <button
-                onClick={() => setShowCustomization(false)}
-                className="rounded border px-4 py-2 text-gray-700 hover:bg-gray-100"
-              >
-                {cancelText}
-              </button>
-              <button
                 onClick={() => {
                   const sizePrice = getSizePrice(size);
+
+                  // 🔹 Calculate total topping price dynamically from menuItems
+                  const toppingsPrice = selectedToppings.reduce((sum, toppingName) => {
+                    const toppingItem = menuItems.find(
+                      (item) => item.category.toLowerCase() === 'topping' && item.name === toppingName
+                    );
+                    return sum + (toppingItem?.price || 0);
+                  }, 0);
+
                   addToCart({
                     ...customItem,
-                    price: customItem.price + sizePrice, // Add size price to base price
+                    price: customItem.price + sizePrice + toppingsPrice, // 🔹 Add topping price to total
                     ice: iceLevel,
-                    size: size,
+                    size,
                     sugar: sugarLevel,
                     toppings: selectedToppings,
                     quantity: 1,
