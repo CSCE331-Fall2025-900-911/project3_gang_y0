@@ -48,10 +48,15 @@ export default function EmployeesTab() {
     setForm({ name: item.name, email: item.email, position: item.position });
   }
 
+  function cap(word: string) {
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }
+
   return (
     <div>
       <h2 className="text-xl font-semibold text-blue-800 mb-4">Employees</h2>
       <div className="grid grid-cols-2 gap-6">
+
         {/* Table */}
         <div>
           <table className="w-full text-left border border-gray-200 rounded text-black">
@@ -70,7 +75,7 @@ export default function EmployeesTab() {
                   <td className="p-2">{it.id}</td>
                   <td className="p-2">{it.name}</td>
                   <td className="p-2">{it.email}</td>
-                  <td className="p-2">{it.position.charAt(0).toUpperCase() + it.position.slice(1)}</td>
+                  <td className="p-2">{cap(it.position)}</td>
                   <td className="p-2 flex gap-2">
                     <button onClick={() => edit(it)} className="px-2 py-1 text-sm border rounded">Edit</button>
                     <button onClick={() => remove(it.id)} className="px-2 py-1 text-sm border rounded text-red-600">Delete</button>
@@ -104,19 +109,30 @@ export default function EmployeesTab() {
           </label>
 
           <label className="block mb-4">
-            <div className="text-sm text-gray-700 text-gray-700">Position</div>
+            <div className="text-sm text-gray-700">Position</div>
             <select
               className="w-full p-2 border rounded text-gray-700"
-              value={form.position.charAt(0).toUpperCase() + form.position.slice(1)}
-              onChange={e => setForm({ ...form, position: e.target.value.toLowerCase() as Employee['position'] })}
+              value={form.position}
+              onChange={e => setForm({ ...form, position: e.target.value as Employee['position'] })}
             >
-              {POSITIONS.map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+              {POSITIONS.map(p => (
+                <option key={p} value={p}>
+                  {cap(p)}
+                </option>
+              ))}
             </select>
           </label>
 
           <div className="flex gap-2">
             <button onClick={save} className="px-4 py-2 bg-blue-600 text-white rounded">{editing ? 'Update' : 'Create'}</button>
-            {editing && <button onClick={() => { setEditing(null); setForm({ name: '', email: '', position: 'cashier' }); }} className="px-4 py-2 border rounded">Cancel</button>}
+            {editing && (
+              <button
+                onClick={() => { setEditing(null); setForm({ name: '', email: '', position: 'cashier' }); }}
+                className="px-4 py-2 border rounded"
+              >
+                Cancel
+              </button>
+            )}
           </div>
         </div>
       </div>
