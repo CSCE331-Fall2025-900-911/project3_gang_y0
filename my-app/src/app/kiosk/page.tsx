@@ -70,6 +70,7 @@ export default function KioskPage() {
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [customerName, setCustomerName] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [pointsEarned, setPointsEarned] = useState<number>(0);
 
   // Get text size class
   const { getTextSizeClass } = useTextSize();
@@ -116,6 +117,8 @@ export default function KioskPage() {
   const returningToLoginText = useTranslation('Returning to login in');
   const secondsText = useTranslation('seconds');
   const returnNowText = useTranslation('Return to Login Now');
+  const pointsEarnedText = useTranslation('Reward Points Earned');
+  const pointsText = useTranslation('points');
 
   // Translate ice and sugar levels
   const iceLevels = useMemo(() => ICE_LEVELS, []);
@@ -408,6 +411,7 @@ export default function KioskPage() {
     }
 
     setIsCheckingOut(true);
+    setPointsEarned(0); // Reset points earned for new checkout
 
     try {
       // Calculate total after discount
@@ -432,6 +436,7 @@ export default function KioskPage() {
 
       if (data.success) {
         // Add points if customer exists: $1 = 1 point (based on final total after discount)
+        let earnedPoints = 0;
         if (customerId && total > 0) {
           const pointsToAdd = Math.floor(total);
           if (pointsToAdd > 0) {
@@ -446,6 +451,7 @@ export default function KioskPage() {
                   pointsToAdd: pointsToAdd
                 }),
               });
+              earnedPoints = pointsToAdd;
             } catch (error) {
               console.error('Error adding points:', error);
               // Don't fail the order if points addition fails
@@ -456,6 +462,7 @@ export default function KioskPage() {
         // Generate random 2-digit order number (10-99)
         const randomOrderNum = Math.floor(Math.random() * 90) + 10;
         setOrderNumber(randomOrderNum);
+        setPointsEarned(earnedPoints);
         
         // Clear cart and reset spinner on success
         setCart([]);
@@ -980,6 +987,20 @@ export default function KioskPage() {
                 </p>
               </div>
             </div>
+
+            {/* Reward Points Earned */}
+            {pointsEarned > 0 && (
+              <div className="mb-6">
+                <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl py-4 px-6 inline-block">
+                  <p className={`${getTextSizeClass('lg')} text-gray-700 mb-1 font-semibold`}>
+                    {pointsEarnedText}
+                  </p>
+                  <p className={`${getTextSizeClass('3xl')} font-bold text-purple-600`}>
+                    +{pointsEarned} {pointsText}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Thank You Message */}
             <p className={`${getTextSizeClass('2xl')} text-gray-700 mb-2 font-semibold`}>
