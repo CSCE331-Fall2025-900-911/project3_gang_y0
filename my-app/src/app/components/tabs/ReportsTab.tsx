@@ -91,7 +91,7 @@ export default function ReportsTab() {
       </nav>
 
       {(active === 'sales' || active === 'usage') && (
-        <div className="flex gap-2 mb-4 items-center">
+        <div className="flex gap-2 mb-4 items-center text-black">
           <label>
             From:{' '}
             <input
