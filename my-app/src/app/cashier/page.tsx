@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslation, useTranslations } from '@/hooks/useTranslation';
 import { useTextSize } from '@/contexts/TextSizeContext';
 import { filterSeasonalDrinks, type Season } from '@/lib/seasonalDrinks';
@@ -34,6 +35,7 @@ interface Customer {
 }
 
 export default function Cashier() {
+  const router = useRouter();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -45,7 +47,29 @@ export default function Cashier() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [discount, setDiscount] = useState(0);
   const [loadingCustomer, setLoadingCustomer] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [employeePosition, setEmployeePosition] = useState<string>('');
   const { getTextSizeClass } = useTextSize();
+
+  // Authentication check
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/check');
+        if (!response.ok) {
+          router.push('/employee-login');
+          return;
+        }
+        const data = await response.json();
+        setEmployeePosition(data.employee.position);
+        setAuthChecked(true);
+      } catch (error) {
+        router.push('/employee-login');
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   // Customization states
   const [showCustomization, setShowCustomization] = useState(false);
@@ -392,7 +416,7 @@ export default function Cashier() {
     );
   };
 
-  if (loading) {
+  if (loading || !authChecked) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-xl text-gray-600">{loadingText}</div>
@@ -405,7 +429,9 @@ export default function Cashier() {
       <div className="flex h-screen">
         {/* Left Side - Menu Items */}
         <div className="w-2/3 overflow-y-auto bg-white p-6">
-          <h1 className="mb-6 font-bold text-gray-800 text-center">{cashierText}</h1>
+          <div className="mb-6">
+            <h1 className="font-bold text-gray-800 text-center">{cashierText}</h1>
+          </div>
 
           {/* Category Tabs */}
           <div className="mb-6 flex gap-2 border-b">

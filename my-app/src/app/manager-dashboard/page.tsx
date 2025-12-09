@@ -34,15 +34,6 @@ export default function ManagerDashboard() {
     checkAuth();
   }, [router]);
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      router.push('/employee-login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 flex items-center justify-center">
@@ -60,17 +51,9 @@ export default function ManagerDashboard() {
       <div className="max-w-4xl mx-auto py-12 px-4">
         {/* Header */}
         <div className="bg-white rounded-2xl p-8 shadow-lg mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className={`font-bold text-gray-800 ${getTextSizeClass('3xl')}`}>Manager Dashboard</h1>
-              <p className={`text-gray-600 mt-2 ${getTextSizeClass('base')}`}>Welcome back, {employee.name}!</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className={`bg-gradient-to-r from-pink-400 to-purple-500 text-white px-6 py-3 rounded-lg hover:from-pink-500 hover:to-purple-600 transition-all duration-300 shadow-md hover:shadow-lg ${getTextSizeClass('sm')}`}
-            >
-              Logout
-            </button>
+          <div>
+            <h1 className={`font-bold text-gray-800 ${getTextSizeClass('3xl')}`}>Manager Dashboard</h1>
+            <p className={`text-gray-600 mt-2 ${getTextSizeClass('base')}`}>Welcome back, {employee.name}!</p>
           </div>
         </div>
         

@@ -66,6 +66,7 @@ export default function Login() {
       }
 
       // Success - redirect to kiosk
+      sessionStorage.setItem('fromLogin', 'true');
       router.push('/kiosk');
     } catch (err) {
       console.error('Login error:', err);
@@ -75,6 +76,7 @@ export default function Login() {
   };
 
   const handleGoogleLogin = () => {
+    sessionStorage.setItem('fromLogin', 'true');
     signIn("google", { callbackUrl: "/kiosk" });
   };
 
@@ -87,6 +89,8 @@ export default function Login() {
     } catch (error) {
       // Ignore errors, just proceed to kiosk
     }
+    // Set flag to indicate user came from login page
+    sessionStorage.setItem('fromLogin', 'true');
     router.push('/kiosk');
   };
 
@@ -141,6 +145,7 @@ export default function Login() {
       // Success - close modal and redirect to kiosk
       setShowSignUp(false);
       setSignUpData({ name: '', phoneNumber: '', email: '' });
+      sessionStorage.setItem('fromLogin', 'true');
       router.push('/kiosk');
     } catch (err) {
       console.error('Sign up error:', err);

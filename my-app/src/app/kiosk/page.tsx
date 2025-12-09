@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { filterSeasonalDrinks, type Season } from '@/lib/seasonalDrinks';
@@ -40,6 +40,7 @@ const SIZE_OPTIONS: ('small' | 'medium' | 'large')[] = ['small', 'medium', 'larg
 export default function KioskPage() {
   const router = useRouter();
   const { data: session } = useSession();
+  const hasCheckedAuthRef = useRef(false);
   const [menuData, setMenuData] = useState<MenuData>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -71,6 +72,7 @@ export default function KioskPage() {
   const [customerName, setCustomerName] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [pointsEarned, setPointsEarned] = useState<number>(0);
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
   // Get text size class
   const { getTextSizeClass } = useTextSize();
@@ -160,9 +162,58 @@ export default function KioskPage() {
   }, [allMenuItemNames, translatedMenuItemNames]);
 
   useEffect(() => {
-    fetchWeatherAndMenu();
-    checkCustomerSession();
-  }, []);
+    // Prevent double-checking in React strict mode
+    if (hasCheckedAuthRef.current) {
+      return;
+    }
+    
+    // Check if user accessed kiosk through proper flow
+    const checkAccess = async () => {
+      hasCheckedAuthRef.current = true;
+      
+      // Check if there's a customer session or if they came from the login page
+      const fromLogin = sessionStorage.getItem('fromLogin');
+      
+      console.log('Kiosk access check - fromLogin flag:', fromLogin);
+      
+      if (fromLogin) {
+        // Clear the flag
+        sessionStorage.removeItem('fromLogin');
+        console.log('Access granted via fromLogin flag');
+        setHasCheckedAuth(true);
+        return;
+      }
+
+      // Check if there's an active customer session
+      try {
+        const response = await fetch('/api/auth/customer-check');
+        console.log('Customer check response:', response.status);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.customer) {
+            console.log('Access granted via customer session');
+            setHasCheckedAuth(true);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+      }
+
+      // No session and didn't come from login, redirect
+      console.log('No valid access, redirecting to login');
+      router.push('/login');
+    };
+
+    checkAccess();
+  }, [router]);
+
+  useEffect(() => {
+    if (hasCheckedAuth) {
+      fetchWeatherAndMenu();
+      checkCustomerSession();
+    }
+  }, [hasCheckedAuth]);
 
   // Auto-dismiss toast after 5 seconds
   useEffect(() => {
@@ -196,8 +247,10 @@ export default function KioskPage() {
           setCustomerName(data.customer.name);
         }
       }
+      // Guest access is allowed, so don't redirect if no customer
     } catch (error) {
-      // Not logged in, that's fine
+      // Error checking, but still allow guest access
+      console.error('Error checking customer session:', error);
     }
   };
 

@@ -1,8 +1,46 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import ManagerTabs from '../components/ManagerTabs';
 
 export default function ManagerPage() {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/check');
+        if (!response.ok) {
+          router.push('/employee-login');
+          return;
+        }
+        const data = await response.json();
+        if (data.employee.position !== 'manager') {
+          router.push('/employee-login');
+          return;
+        }
+        setIsAuthenticated(true);
+      } catch (error) {
+        router.push('/employee-login');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
+  if (loading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-gray-800">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white flex items-start justify-center py-8">
       <div className="w-[1200px] border border-gray-200 rounded-2xl shadow-sm bg-gradient-to-b from-white to-slate-50">
