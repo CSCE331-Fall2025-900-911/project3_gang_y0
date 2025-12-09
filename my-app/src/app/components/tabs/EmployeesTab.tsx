@@ -106,7 +106,7 @@ export default function EmployeesTab() {
           <label className="block mb-4">
             <div className="text-sm text-gray-700 text-gray-700">Position</div>
             <select
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded text-gray-700"
               value={form.position.charAt(0).toUpperCase() + form.position.slice(1)}
               onChange={e => setForm({ ...form, position: e.target.value.toLowerCase() as Employee['position'] })}
             >
