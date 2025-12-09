@@ -17,11 +17,23 @@ export default function ReportsTab() {
   const [from, setFrom] = useState<string>(localISODate);
   const [to, setTo] = useState<string>(localISODate);
 
+  // Clear previous data instantly on tab switch
   useEffect(() => {
-    if (active !== 'z') fetchReport(active);
+    setData("loading...");
+  }, [active]);
+
+  // Trigger fetch reliably
+  useEffect(() => {
+    if (active === 'z') return;
+
+    if ((active === 'sales' || active === 'usage') && (!from || !to)) return;
+
+    fetchReport(active);
   }, [active, from, to]);
 
   async function fetchReport(type: ReportTab) {
+    setData("loading...");
+
     let url = '';
     if (type === 'x') url = '/api/reports/x';
 
@@ -42,6 +54,7 @@ export default function ReportsTab() {
   }
 
   async function runZReport() {
+    setData("loading...");
     const res = await fetch('/api/reports/z', { method: 'POST' });
     const json = await res.json();
     setData(
@@ -62,16 +75,19 @@ export default function ReportsTab() {
     <div>
       <nav className="flex gap-2 border-b pb-4 mb-4">
         {tabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setActive(t.id)}
-            className={`px-3 py-2 rounded-t-lg font-medium ${
-              active === t.id ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-blue-800 border border-gray-200'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+            <button
+              key={t.id}
+              onClick={() => {
+                setData("loading..."); 
+                setActive(t.id);
+              }}
+              className={`px-3 py-2 rounded-t-lg font-medium ${
+                active === t.id ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-blue-800 border border-gray-200'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
       </nav>
 
       {(active === 'sales' || active === 'usage') && (
