@@ -106,7 +106,7 @@ export default function PortalPage() {
 
           {/* Kiosk Button */}
           <button
-            onClick={() => handleNavigation('/kiosk')}
+            onClick={() => handleNavigation('/login')}
             className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-transparent hover:border-purple-300"
           >
             <div className="text-center">

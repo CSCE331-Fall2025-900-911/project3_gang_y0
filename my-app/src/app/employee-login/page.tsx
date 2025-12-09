@@ -1,15 +1,57 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { signIn, useSession } from "next-auth/react";
 import { useTextSize } from '@/contexts/TextSizeContext';
 
 export default function EmployeeLogin() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const { getTextSizeClass } = useTextSize();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hasChecked, setHasChecked] = useState(false);
+
+  // Check if user is already authenticated via OAuth
+  useEffect(() => {
+    const checkEmployeeStatus = async () => {
+      // Only check once when authenticated and haven't checked yet
+      if (status === 'authenticated' && session && !hasChecked) {
+        setHasChecked(true);
+        console.log('Authenticated session:', session);
+        try {
+          const response = await fetch('/api/auth/check-employee');
+          const data = await response.json();
+          console.log('Employee check response:', data);
+
+          if (data.isEmployee && data.employee) {
+            console.log('Redirecting to dashboard for:', data.employee.position);
+            // Redirect based on role
+            if (data.employee.position === 'manager') {
+              router.push('/manager-dashboard');
+            } else {
+              router.push('/cashier');
+            }
+          } else {
+            // Not an employee, show error
+            console.log('Not an employee - setting error');
+            setError('This Google account is not associated with an employee');
+          }
+        } catch (error) {
+          console.error('Error checking employee status:', error);
+          setError('Error checking employee status');
+        }
+      }
+    };
+
+    checkEmployeeStatus();
+  }, [session, status, hasChecked, router]);
+
+  const handleGoogleLogin = () => {
+    signIn("google", { callbackUrl: "/employee-login" });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,6 +145,16 @@ export default function EmployeeLogin() {
               >
                 {loading ? 'Signing in...' : 'Sign In'}
               </button>
+
+              <div className="pt-6 space-y-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  className={`w-full px-4 py-3 bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 rounded-2xl font-bold hover:from-pink-300 hover:to-purple-400 transition-all shadow-lg ${getTextSizeClass('base')}`}
+                >
+                  Login with Google
+                </button>
+              </div>
             </form>
           </div>
         </div>

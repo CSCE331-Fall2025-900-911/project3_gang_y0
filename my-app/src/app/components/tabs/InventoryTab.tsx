@@ -51,7 +51,7 @@ export default function InventoryTab() {
   return (
     <div>
       <h2 className="text-xl font-semibold text-blue-800 mb-4">Inventory Items</h2>
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 gap-6 text-black">
         <div>
           <table className="w-full text-left border border-gray-200 rounded">
             <thead className="bg-slate-50">
