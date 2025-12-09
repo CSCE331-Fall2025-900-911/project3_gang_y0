@@ -455,7 +455,7 @@ export default function Cashier() {
 
           {/* Customer Lookup Section */}
           <div className="mb-4 rounded-lg bg-white p-4 shadow-sm">
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className={`mb-2 block font-medium text-gray-700 ${getTextSizeClass('sm')}`}>
               Customer Phone Number
             </label>
             <div className="flex gap-2">
@@ -469,12 +469,12 @@ export default function Cashier() {
                   }
                 }}
                 placeholder="Enter phone number"
-                className="flex-1 rounded-lg border text-gray-700 border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                className={`flex-1 rounded-lg border text-gray-700 border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none ${getTextSizeClass('base')}`}
               />
               <button
                 onClick={handleLookupCustomer}
                 disabled={loadingCustomer}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
+                className={`rounded-lg bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400 whitespace-nowrap flex-shrink-0 ${getTextSizeClass('sm')}`}
               >
                 {loadingCustomer ? '...' : 'Lookup'}
               </button>
