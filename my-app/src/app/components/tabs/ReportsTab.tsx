@@ -185,17 +185,15 @@ export default function ReportsTab() {
         <YAxis />
 
         <Tooltip
-          isAnimationActive={false}
-          labelFormatter={(ms: number) =>
-            new Date(ms).toLocaleString('en-US', {
-              timeZone: 'America/Chicago',
-              hour: 'numeric',
-              minute: '2-digit',
-              hour12: true,
-            })
-          }
-          formatter={(value: any) => `$${Number(value).toFixed(2)}`}
+          contentStyle={{
+            backgroundColor: 'white',
+            border: '1px solid #ddd',
+            color: 'black',
+          }}
+          labelStyle={{ color: 'black' }}
+          itemStyle={{ color: 'black' }}
         />
+
 
         <Line
           type="monotone"
@@ -294,7 +292,7 @@ export default function ReportsTab() {
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="border p-1 rounded"
+              className="border p-1 rounded text-black"
             />
           </label>
           <label>
@@ -303,7 +301,7 @@ export default function ReportsTab() {
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="border p-1 rounded"
+              className="border p-1 rounded text-black"
             />
           </label>
 
