@@ -38,15 +38,27 @@ export async function GET() {
 
     // Group by Chicago-local hour and return epoch-ms for the hour.
     const q = `
+      WITH tx AS (
+        SELECT
+          id,
+          amount,
+          date_trunc('hour', timestamp AT TIME ZONE 'America/Chicago') AS hour_local
+        FROM transactions
+        WHERE timestamp >= $1 AND timestamp < $2
+      ),
+      ti_count AS (
+        SELECT transaction_id, COUNT(*) AS items
+        FROM transaction_items
+        WHERE transaction_id IN (SELECT id FROM tx)
+        GROUP BY transaction_id
+      )
       SELECT
-        (EXTRACT(EPOCH FROM date_trunc('hour', t.timestamp AT TIME ZONE 'America/Chicago') + INTERVAL '4 hour') * 1000)::bigint AS hour_ms,
-        COUNT(DISTINCT t.id) AS orders_count,
-        COALESCE(SUM(t.amount), 0)::numeric(12,2) AS gross_sales,
-        COALESCE(COUNT(ti.*), 0) AS items_sold
-      FROM transactions t
-      LEFT JOIN transaction_items ti ON ti.transaction_id = t.id
-      WHERE t.timestamp >= $1
-        AND t.timestamp < $2
+        (EXTRACT(EPOCH FROM tx.hour_local + INTERVAL '4 hour') * 1000)::bigint AS hour_ms,
+        COUNT(tx.id) AS orders_count,
+        COALESCE(SUM(tx.amount), 0)::numeric(12,2) AS gross_sales,
+        COALESCE(SUM(ti_count.items), 0) AS items_sold
+      FROM tx
+      LEFT JOIN ti_count ON ti_count.transaction_id = tx.id
       GROUP BY 1
       ORDER BY 1;
     `;

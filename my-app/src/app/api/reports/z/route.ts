@@ -39,16 +39,29 @@ export async function POST() {
 
     // Summary for the Chicago local date
     const summaryQuery = `
+      WITH tx AS (
+        SELECT
+          id,
+          amount,
+          date_trunc('day', timestamp AT TIME ZONE 'America/Chicago') AS day_local
+        FROM transactions
+        WHERE timestamp >= $1 AND timestamp < $2
+      ),
+      ti_count AS (
+        SELECT transaction_id, COUNT(*) AS items
+        FROM transaction_items
+        WHERE transaction_id IN (SELECT id FROM tx)
+        GROUP BY transaction_id
+      )
       SELECT
-        (date_trunc('day', t.timestamp AT TIME ZONE 'America/Chicago') + INTERVAL '4 hour')::date AS day,
-        COUNT(DISTINCT t.id) AS total_orders,
-        COALESCE(SUM(t.amount), 0)::numeric(12,2) AS gross_sales,
-        COALESCE(AVG(t.amount), 0)::numeric(12,2) AS avg_order_amount,
-        COALESCE(COUNT(ti.*), 0) AS total_items_sold
-      FROM transactions t
-      LEFT JOIN transaction_items ti ON ti.transaction_id = t.id
-      WHERE t.timestamp >= $1 AND t.timestamp < $2
-      GROUP BY date_trunc('day', t.timestamp AT TIME ZONE 'America/Chicago');
+        (tx.day_local + INTERVAL '4 hour')::date AS day,
+        COUNT(tx.id) AS total_orders,
+        COALESCE(SUM(tx.amount), 0)::numeric(12,2) AS gross_sales,
+        COALESCE(AVG(tx.amount), 0)::numeric(12,2) AS avg_order_amount,
+        COALESCE(SUM(ti_count.items), 0) AS total_items_sold
+      FROM tx
+      LEFT JOIN ti_count ON ti_count.transaction_id = tx.id
+      GROUP BY tx.day_local;
     `;
 
     const { rows } = await client.query(summaryQuery, [startUtc, endUtc]);
