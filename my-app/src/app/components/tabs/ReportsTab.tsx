@@ -22,13 +22,21 @@ function localISODate() {
   return d.toISOString().slice(0, 10);
 }
 
+function localISODatePlusOne() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+}
+
 export default function ReportsTab() {
   const [active, setActive] = useState<ReportTab>('x');
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  const [from, setFrom] = useState<string>(localISODate);
-  const [to, setTo] = useState<string>(localISODate);
+  const [from, setFrom] = useState<string>(localISODate());
+  const [to, setTo] = useState<string>(localISODatePlusOne());
+
 
   const [zStarted, setZStarted] = useState(false);
 
