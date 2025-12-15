@@ -22,10 +22,13 @@ interface CartItem {
   item?: string;
   quantity: number;
   ice?: 'hot' | 'cold';
+  iceLevel?: string;
   size?: 'small' | 'medium' | 'large';
   sugar?: string;
   toppings?: string[];
 }
+
+const ICE_LEVELS = ['No Ice', 'Light', 'Regular', 'Extra'];
 
 interface Customer {
   id: number;
@@ -75,8 +78,9 @@ export default function Cashier() {
   const [showCustomization, setShowCustomization] = useState(false);
   const [customItem, setCustomItem] = useState<MenuItem | null>(null);
   const [iceLevel, setIceLevel] = useState<'hot' | 'cold'>('cold');
-  const [size, setSize] = useState<'small' | 'medium' | 'large'>('medium');
-  const [sugarLevel, setSugarLevel] = useState<string>('');
+  const [iceLevelAmount, setIceLevelAmount] = useState<string>('Regular');
+  const [size, setSize] = useState<'small' | 'medium' | 'large'>('small');
+  const [sugarLevel, setSugarLevel] = useState<string>('100%');
   const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
   const allToppings = ['Crystal Boba','Grass Jelly', 'Mini Boba', 'Red Bean'];
   
@@ -114,9 +118,13 @@ export default function Cashier() {
   const mediumText = useTranslation('Medium');
   const largeText = useTranslation('Large');
   const sugarLevelText = useTranslation('Sugar Level');
+  const iceLevelText = useTranslation('Ice Level');
   const toppingsText = useTranslation('Toppings');
   const cancelText = useTranslation('Cancel');
   const addToCartText = useTranslation('Add to Cart');
+  
+  // Translate ice levels
+  const translatedIceLevels = useTranslations(ICE_LEVELS);
   
   // Translate ice, size, and sugar values
   const hotValueText = useTranslation('hot');
@@ -126,7 +134,7 @@ export default function Cashier() {
   const largeValueText = useTranslation('large');
   
   // Helper function to translate cart item details
-  const translateCartItemDetail = (type: 'ice' | 'size' | 'sugar', value: string) => {
+  const translateCartItemDetail = (type: 'ice' | 'size' | 'sugar' | 'iceLevel', value: string) => {
     if (type === 'ice') {
       return value === 'hot' ? hotValueText : coldValueText;
     }
@@ -134,6 +142,10 @@ export default function Cashier() {
       if (value === 'small') return smallValueText;
       if (value === 'medium') return mediumValueText;
       if (value === 'large') return largeValueText;
+    }
+    if (type === 'iceLevel') {
+      // Capitalize first letter of each word for ice level
+      return value.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
     }
     return value; // For sugar, return as is (it's already a percentage)
   };
@@ -221,6 +233,7 @@ export default function Cashier() {
         (cartItem) =>
           cartItem.id === item.id &&
           cartItem.ice === item.ice &&
+          cartItem.iceLevel === item.iceLevel &&
           cartItem.size === item.size &&
           cartItem.sugar === item.sugar &&
           JSON.stringify(cartItem.toppings) === JSON.stringify(item.toppings)
@@ -458,8 +471,9 @@ export default function Cashier() {
                 onClick={() => {
                   setCustomItem(item);
                   setIceLevel('cold');
-                  setSize('medium');
-                  setSugarLevel('');
+                  setIceLevelAmount('Regular');
+                  setSize('small');
+                  setSugarLevel('100%');
                   setSelectedToppings([]);
                   setShowCustomization(true);
                 }}
@@ -573,10 +587,25 @@ export default function Cashier() {
                       <div className="flex-1">
                         <div className="font-medium text-gray-800">{menuItemTranslationMap[item.item || item.name] || item.name}</div>
                         <div className="text-sm text-gray-500">
-                          {item.ice ? translateCartItemDetail('ice', item.ice) : ''}{item.ice && item.size ? ', ' : ''}
-                          {item.size ? translateCartItemDetail('size', item.size) : ''}{(item.ice || item.size) && item.sugar ? ', ' : ''}
-                          {item.sugar ? translateCartItemDetail('sugar', item.sugar) : ''}{(item.ice || item.size || item.sugar) && item.toppings && item.toppings.length > 0 ? ', ' : ''}
-                          {item.toppings?.map(topping => toppingTranslationMap[topping] || topping).join(', ')}
+                          {(() => {
+                            const parts: string[] = [];
+                            if (item.ice) {
+                              parts.push(`${translateCartItemDetail('ice', item.ice)}`);
+                            }
+                            if (item.iceLevel && item.ice === 'cold') {
+                              parts.push(`${translateCartItemDetail('iceLevel', item.iceLevel)} Ice`);
+                            }
+                            if (item.size) {
+                              parts.push(translateCartItemDetail('size', item.size));
+                            }
+                            if (item.sugar) {
+                              parts.push(translateCartItemDetail('sugar', item.sugar));
+                            }
+                            if (item.toppings && item.toppings.length > 0) {
+                              parts.push(`Toppings: ${item.toppings.map(topping => toppingTranslationMap[topping] || topping).join(', ')}`);
+                            }
+                            return parts.join(', ');
+                          })()}
                           <br />
                           ${item.price.toFixed(2)} × {item.quantity}
                         </div>
@@ -594,6 +623,7 @@ export default function Cashier() {
                             addToCart({
                               ...item,
                               ice: item.ice,
+                              iceLevel: item.iceLevel,
                               size: item.size,
                               sugar: item.sugar,
                               toppings: item.toppings,
@@ -692,8 +722,14 @@ export default function Cashier() {
       {/* Customization Modal */}
       {showCustomization && customItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 text-black">
-          <div className="w-1/3 rounded-lg bg-white p-6">
-            <h2 className="mb-4 text-xl font-bold">{menuItemTranslationMap[customItem.item || customItem.name] || customItem.name} {customizationText}</h2>
+          <div className="w-1/3 rounded-lg bg-white p-6 relative">
+            <button
+              onClick={() => setShowCustomization(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold leading-none"
+            >
+              ×
+            </button>
+            <h2 className="mb-4 text-xl font-bold pr-8">{menuItemTranslationMap[customItem.item || customItem.name] || customItem.name} {customizationText}</h2>
 
             {/* Ice */}
             <div className="mb-4">
@@ -707,6 +743,24 @@ export default function Cashier() {
                 <option value="cold">{coldText}</option>
               </select>
             </div>
+
+            {/* Ice Level - only show for cold drinks, not for smoothies */}
+            {iceLevel === 'cold' && customItem?.category?.toLowerCase() !== 'smoothie' && (
+              <div className="mb-4">
+                <label className="block mb-1">{iceLevelText}</label>
+                <select
+                  className="w-full rounded border p-2"
+                  value={iceLevelAmount}
+                  onChange={(e) => setIceLevelAmount(e.target.value)}
+                >
+                  {ICE_LEVELS.map((level, index) => (
+                    <option key={level} value={level}>
+                      {translatedIceLevels[index] || level}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Size */}
             <div className="mb-4">
@@ -776,6 +830,7 @@ export default function Cashier() {
                     ...customItem,
                     price: customItem.price + sizePrice + toppingsPrice, // 🔹 Add topping price to total
                     ice: iceLevel,
+                    iceLevel: iceLevel === 'cold' && customItem.category?.toLowerCase() !== 'smoothie' ? iceLevelAmount : undefined,
                     size,
                     sugar: sugarLevel,
                     toppings: selectedToppings,
