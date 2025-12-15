@@ -490,11 +490,11 @@ export default function Cashier() {
         </div>
 
         {/* Right Side - Order Summary */}
-        <div className="w-1/3 border-l bg-gray-50 p-6">
-          <h2 className="mb-4 text-2xl font-bold text-gray-800">{currentOrderText}</h2>
+        <div className="flex h-full w-1/3 flex-col border-l bg-gray-50 p-6 overflow-hidden">
+          <h2 className="mb-4 text-2xl font-bold text-gray-800 flex-shrink-0">{currentOrderText}</h2>
 
           {/* Customer Lookup Section */}
-          <div className="mb-4 rounded-lg bg-white p-4 shadow-sm">
+          <div className="mb-4 rounded-lg bg-white p-4 shadow-sm flex-shrink-0">
             <label className={`mb-2 block font-medium text-gray-700 ${getTextSizeClass('sm')}`}>
               Customer Phone Number
             </label>
@@ -570,9 +570,9 @@ export default function Cashier() {
               <p className="text-gray-600">{newOrderText}</p>
             </div>
           ) : (
-            <>
+            <div className="flex flex-1 flex-col overflow-hidden min-h-0">
               {/* Cart Items */}
-              <div className="mb-4 max-h-96 space-y-2 overflow-y-auto">
+              <div className="mb-4 flex-1 space-y-2 overflow-y-auto min-h-0">
                 {cart.length === 0 ? (
                   <div className="rounded-lg bg-white p-8 text-center text-gray-500">
                     <p className="mb-2">{emptyCartText}</p>
@@ -642,7 +642,7 @@ export default function Cashier() {
 
               {/* Total */}
               {cart.length > 0 && (
-                <div className="mb-4 rounded-lg bg-white p-4 shadow-sm">
+                <div className="mb-4 rounded-lg bg-white p-4 shadow-sm flex-shrink-0">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-lg">
                       <span className="text-gray-700">Subtotal:</span>
@@ -664,7 +664,7 @@ export default function Cashier() {
 
               {/* Payment Method Selection */}
               {cart.length > 0 && (
-                <div className="mb-4">
+                <div className="mb-4 flex-shrink-0">
                   <label className="mb-2 block text-sm font-medium text-gray-700">{paymentMethodText}</label>
                   <div className="grid grid-cols-3 gap-2">
                     <button
@@ -693,7 +693,7 @@ export default function Cashier() {
               )}
 
               {/* Action Buttons */}
-              <div className="space-y-2">
+              <div className="space-y-2 flex-shrink-0">
                 {cart.length > 0 && (
                   <button
                     onClick={handleSubmitOrder}
@@ -714,7 +714,7 @@ export default function Cashier() {
                   </button>
                 )}
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
