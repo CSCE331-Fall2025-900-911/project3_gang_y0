@@ -150,3 +150,4 @@ export default function RewardsModal({ isOpen, onClose, onRedeem }: RewardsModal
   );
 }
 
+
