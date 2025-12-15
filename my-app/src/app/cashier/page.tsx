@@ -250,35 +250,17 @@ export default function Cashier() {
     setShowCustomization(false);
   };
 
-  const removeFromCart = (item: CartItem) => {
+  const removeFromCart = (itemId: number) => {
     setCart((prevCart) => {
-      const existingItem = prevCart.find(
-        (cartItem) =>
-          cartItem.id === item.id &&
-          cartItem.ice === item.ice &&
-          cartItem.iceLevel === item.iceLevel &&
-          cartItem.size === item.size &&
-          cartItem.sugar === item.sugar &&
-          JSON.stringify(cartItem.toppings) === JSON.stringify(item.toppings)
-      );
-      if (existingItem && existingItem.quantity > 1) {
+      const item = prevCart.find((cartItem) => cartItem.id === itemId);
+      if (item && item.quantity > 1) {
         return prevCart.map((cartItem) =>
-          cartItem === existingItem
+          cartItem.id === itemId
             ? { ...cartItem, quantity: cartItem.quantity - 1 }
             : cartItem
         );
       }
-      return prevCart.filter(
-        (cartItem) =>
-          !(
-            cartItem.id === item.id &&
-            cartItem.ice === item.ice &&
-            cartItem.iceLevel === item.iceLevel &&
-            cartItem.size === item.size &&
-            cartItem.sugar === item.sugar &&
-            JSON.stringify(cartItem.toppings) === JSON.stringify(item.toppings)
-          )
-      );
+      return prevCart.filter((cartItem) => cartItem.id !== itemId);
     });
   };
 
@@ -630,7 +612,7 @@ export default function Cashier() {
                       </div>
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => removeFromCart(item)}
+                          onClick={() => removeFromCart(item.id)}
                           className="rounded bg-red-100 px-2 py-1 text-red-600 hover:bg-red-200"
                         >
                           −
